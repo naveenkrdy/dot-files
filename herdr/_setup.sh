@@ -16,6 +16,10 @@ mkdir -p "${HOME}/.config/herdr"
 # ── Symlink config ────────────────────────────────────────────────────────────
 safe_link "${SCRIPT_DIR}/config.toml" "${HOME}/.config/herdr/config.toml"
 
+# Keybinding scripts live next to the config so config.toml can reference them
+# by a fixed path ($HOME/.config/herdr/...) instead of the repo's own location
+safe_link "${SCRIPT_DIR}/move-pane-to-split.sh" "${HOME}/.config/herdr/move-pane-to-split.sh"
+
 # ── Reload a running server, if any ──────────────────────────────────────────
 if herdr status &>/dev/null; then
   if herdr server reload-config &>/dev/null; then

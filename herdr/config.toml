@@ -73,7 +73,7 @@ command = "herdr plugin action invoke open-sidebar --plugin herdr-sidebar"
 [[keys.command]]              # move current tab's pane into a split of another tab (fzf picker)
 key = "prefix+alt+m"
 type = "popup"
-command = "bash '/Users/naveenkrdy/Documents/Repo/dot-files/herdr/move-pane-to-split.sh'"
+command = "bash \"$HOME/.config/herdr/move-pane-to-split.sh\""
 width = "60%"
 height = "50%"
 
