@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk ls *)",
+      "Bash(rtk grep *)",
+      "Bash(rtk read *)"
+    ]
+  },
+  "skillOverrides": {
+    "visual-plan": "user-invocable-only"
+  }
+}

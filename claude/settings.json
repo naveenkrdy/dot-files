@@ -1,0 +1,68 @@
+{
+  "hooks" : {
+    "PostToolUse" : [
+      {
+        "matcher" : "^(Read|Edit|Write)$",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "command -v looq >/dev/null 2>&1 && looq --track-session || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse" : [
+      {
+        "matcher" : "Bash",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "rtk hook claude"
+          }
+        ]
+      }
+    ],
+    "SessionStart" : [
+      {
+        "matcher" : "*",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "bash '/Users/naveenkrdy/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout" : 10
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine" : {
+    "type" : "command",
+    "command" : "bash /Users/naveenkrdy/.claude/statusline-command.sh"
+  },
+  "enabledPlugins" : {
+    "claude-code-setup@claude-plugins-official" : false,
+    "claude-md-management@claude-plugins-official" : true,
+    "frontend-design@claude-plugins-official" : true,
+    "playwright@claude-plugins-official" : true,
+    "remember@claude-plugins-official" : true,
+    "security-guidance@claude-plugins-official" : true,
+    "superpowers@superpowers-marketplace" : false,
+    "swift-lsp@claude-plugins-official" : false
+  },
+  "extraKnownMarketplaces" : {
+    "superpowers-marketplace" : {
+      "source" : {
+        "source" : "github",
+        "repo" : "obra/superpowers-marketplace"
+      }
+    }
+  },
+  "spinnerTipsEnabled" : false,
+  "effortLevel" : "high",
+  "awaySummaryEnabled" : true,
+  "tui" : "fullscreen",
+  "skipDangerousModePermissionPrompt" : true,
+  "theme" : "custom:tokyo-night",
+  "inputNeededNotifEnabled" : true,
+  "agentPushNotifEnabled" : true
+}

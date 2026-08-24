@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-source ../misc.sh
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$DOTFILES_DIR/../misc.sh"
 
-cd $(dirname "${0}") && echo "Switching to $PWD"
+cd "$DOTFILES_DIR" && echo "Switching to $PWD"
 
 system_prefs_list=(
     general

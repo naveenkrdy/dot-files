@@ -1,0 +1,61 @@
+# Custom zsh-patina theme matching this machine's Tokyo Night palette
+# (same truecolor values used for EZA_COLORS/LS_COLORS/prompt in ~/.zshrc).
+# Scope reference: `zsh-patina list-scopes`. More specific scopes override
+# less specific ones completely (no inheritance across different scope trees),
+# so punctuation for comments/strings is set to match its content explicitly.
+
+# comments
+"comment" = "#414868"
+"punctuation.definition.comment.begin" = "#414868"
+
+# strings
+"string" = "#9ece6a"
+"punctuation.definition.string" = "#9ece6a"
+"string.unquoted.heredoc" = "#9ece6a"
+
+# escape sequences
+"constant.character.escape" = "#e0af68"
+
+# numbers
+"constant.numeric" = { foreground = "#bb9af7" }
+
+# variables / env vars
+"variable.other.readwrite" = "#e0af68"
+"variable.language" = "#e0af68"
+"punctuation.definition.variable" = "#e0af68"
+"punctuation.section.expansion.parameter.begin" = "#414868"
+"punctuation.section.expansion.parameter.end" = "#414868"
+
+# keywords / control flow
+"keyword.control" = { foreground = "#bb9af7", bold = true }
+"keyword.operator" = "#7dcfff"
+"keyword.builtin" = { foreground = "#bb9af7", bold = true }
+"precommand.builtin" = { foreground = "#bb9af7", bold = true }
+
+# functions / commands — default (unresolved) color, overridden by the
+# dynamic.* scopes below once zsh-patina knows if the command is valid.
+"variable.function" = "#7aa2f7"
+"entity.name.function" = { foreground = "#7aa2f7", bold = true }
+"support.function" = "#7aa2f7"
+
+# dynamic highlighting — overrides the static command color above
+"dynamic.callable.command" = "#9ece6a"
+"dynamic.callable.builtin" = "#9ece6a"
+"dynamic.callable.alias" = "#9ece6a"
+"dynamic.callable.function" = "#9ece6a"
+"dynamic.callable.missing" = { foreground = "#f7768e", bold = true }
+"dynamic.path.file.complete" = { foreground = "#c0caf5", underline = true }
+"dynamic.path.directory.complete" = { foreground = "#7aa2f7", underline = true }
+"dynamic.path.file.partial" = "#c0caf5"
+"dynamic.path.directory.partial" = "#7aa2f7"
+
+# structural punctuation — kept subtle so it doesn't compete with content
+"punctuation.section.parens.begin" = "#414868"
+"punctuation.section.parens.end" = "#414868"
+"punctuation.section.braces.begin" = "#414868"
+"punctuation.section.braces.end" = "#414868"
+"punctuation.section.brackets.begin" = "#414868"
+"punctuation.section.brackets.end" = "#414868"
+
+# invalid/illegal syntax
+"invalid.illegal" = { foreground = "#f7768e", underline = true }

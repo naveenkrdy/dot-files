@@ -1,420 +1,182 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Plugin Manager
+" => CORE PERFORMANCE
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-let need_to_install_plugins = 0
-if empty(glob('~/.vim/autoload/plug.vim'))
-    silent !curl -fLo ~/.vim/autoload/plug.vim --create-dirs
-        \ https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
-    let need_to_install_plugins = 1
+set nocompatible
+set lazyredraw
+set ttyfast
+set updatetime=300
+set shortmess+=c
+
+" VSCode-like completion behavior
+set completeopt=menuone,noinsert
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => PLUGIN MANAGER (vim-plug)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let plug_path = expand('~/.vim/autoload/plug.vim')
+
+if empty(glob(plug_path))
+  silent execute '!curl -fLo ' . plug_path . ' --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+
+  augroup PlugBootstrap
+    autocmd!
+    autocmd VimEnter * ++once PlugInstall --sync | source $MYVIMRC
+  augroup END
 endif
 
-call plug#begin()
+call plug#begin('~/.vim/plugged')
 
-Plug 'preservim/nerdtree'
-Plug 'jacoborus/tender.vim'
+" UI
 Plug 'morhetz/gruvbox'
 Plug 'vim-airline/vim-airline'
-Plug 'tpope/vim-fugitive',  {'commit': '5d11ff7'}
-Plug 'nathanaelkane/vim-indent-guides'
-Plug 'raimondi/delimitmate'
+
+" File explorer
+Plug 'preservim/nerdtree'
+
+" Git
+Plug 'tpope/vim-fugitive'
 Plug 'airblade/vim-gitgutter'
-" Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Editing
+Plug 'jiangmiao/auto-pairs'
+Plug 'nathanaelkane/vim-indent-guides'
+Plug 'tpope/vim-commentary'
+Plug 'tpope/vim-surround'
+Plug 'christoomey/vim-tmux-navigator'
+
+" FZF
+Plug '/opt/homebrew/opt/fzf'
+Plug 'junegunn/fzf.vim'
+
+" Autocomplete (VSCode-like)
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Icons (must be last)
+Plug 'ryanoasis/vim-devicons'
 
 call plug#end()
 
-if need_to_install_plugins == 1
-    echo "Installing plugins..."
-    silent! PlugInstall
-    echo "Done!"
-    q
-endif
-
-" Coc-nvim settings
-" let g:coc_global_extensions = ['coc-git','coc-marketplace']
-
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => General
+" => GENERAL
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Sets how many lines of history VIM has to remember
+set encoding=utf-8
 set history=1000
-
-" Enable filetype plugins
 filetype plugin on
 filetype indent on
 
-" Set to auto read when a file is changed from the outside
 set autoread
 au FocusGained,BufEnter * checktime
 
-" Set leader key
-let mapleader = "`"
-
-" Fast saving
-nmap <leader>w :w!<cr>
-
-" :W sudo saves the file. (useful for handling the permission-denied error)
-command! W execute 'w !sudo tee % > /dev/null' <bar> edit!
+let mapleader="`"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => VIM user interface
+" => UI
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Show texts normally
-set conceallevel=0
-
-" Decrease Update time
-set updatetime=100
-
-" Set 7 lines to the cursor - when moving vertically using j/k
+set number
+set mouse=a
+set ruler
+set clipboard=unnamed
+set signcolumn=yes
+set cmdheight=1
+set hidden
+set wildmenu
+set pumheight=15
+set showmatch
 set so=7
 
-" Avoid garbled characters in Chinese language windows OS
-let $LANG='en'
-set langmenu=en
-source $VIMRUNTIME/delmenu.vim
-source $VIMRUNTIME/menu.vim
+" Cursor shape: bar in insert, block in normal
+let &t_SI = "\e[6 q"
+let &t_SR = "\e[4 q"
+let &t_EI = "\e[2 q"
 
-" Dont show status in vim
-set noshowmode
-
-" Set pop up menu height
-set pumheight=20
-
-" Turn on the Wild menu
-set wildmenu
-
-" Ignore compiled files
-set wildignore=*.o,*~,*.pyc
-if has("win16") || has("win32")
-    set wildignore+=.git\*,.hg\*,.svn\*
-else
-    set wildignore+=*/.git/*,*/.hg/*,*/.svn/*,*/.DS_Store
-endif
-
-" Show line numbers
-set number
-
-" Enable mouse interaction
-set mouse=a
-
-"Always show current position
-set ruler
-
-" Height of the command bar
-set cmdheight=1
-
-" A buffer becomes hidden when it is abandoned
-set hid
-
-" Configure backspace so it acts as it should act
-set backspace=eol,start,indent
-set whichwrap+=<,>,h,l
-
-" Ignore case when searching
 set ignorecase
-
-" When searching try to be smart about cases
 set smartcase
-
-" Highlight search results
 set hlsearch
-
-" Makes search act like search in modern browsers
 set incsearch
 
-" Don't redraw while executing macros (good performance config)
-set lazyredraw
-
-" For regular expressions turn magic on
-set magic
-
-" Show matching brackets when text indicator is over them
-set showmatch
-
-" How many tenths of a second to blink when matching brackets
-set mat=2
-
-" No annoying sound on errors
-set noerrorbells
-set novisualbell
-set t_vb=
-set tm=500
-
-" Add a bit extra margin to the left
-set foldcolumn=1
-
-" Set cursor shapes in different modes
-let &t_SI.="\e[5 q" "SI = INSERT mode
-let &t_SR.="\e[4 q" "SR = REPLACE mode
-let &t_EI.="\e[1 q" "EI = NORMAL mode (ELSE)
-
-" Hilight cursor line in insert mode
-:autocmd InsertEnter * set cul
-:autocmd InsertLeave * set nocul
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Colors and Fonts
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Enable syntax highlighting
 syntax enable
-
-try
-    colorscheme gruvbox
-catch
-endtry
-
 set background=dark
-
-" Set extra options when running in GUI mode
-if has("gui_running")
-    set guioptions-=T
-    set guioptions-=e
-    set t_Co=256
-    set guitablabel=%M\ %t
-endif
-
-" Set utf8 as standard encoding and en_US as the standard language
-set encoding=utf8
-
-" Use Unix as the standard file type
-set ffs=unix,dos,mac
+colorscheme gruvbox
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Files, backups and undo
+" => FILES
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Turn backup off, since most stuff is in SVN, git etc.
 set nobackup
-set nowb
+set nowritebackup
 set noswapfile
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Text, tab and indent related
+" => INDENTATION
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Use spaces instead of tabs
 set expandtab
-
-" Be smart when using tabs ;)
-set smarttab
-
-" 1 tab == 4 spaces
 set shiftwidth=4
 set tabstop=4
-
-" Linebreak on 500 characters
-set lbr
-set tw=500
-
-set ai "Auto indent
-set si "Smart indent
-set wrap "Wrap lines
-
-""""""""""""""""""""""""""""""
-" => Visual mode related
-""""""""""""""""""""""""""""""
-
-" Visual mode pressing * or # searches for the current selection
-" Super useful! From an idea by Michael Naumann
-vnoremap <silent> * :<C-u>call VisualSelection('', '')<CR>/<C-R>=@/<CR><CR>
-vnoremap <silent> # :<C-u>call VisualSelection('', '')<CR>?<C-R>=@/<CR><CR>
+set autoindent
+set smartindent
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Moving around, tabs, windows and buffers
+" => KEY MAPPINGS
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" Map <Space> to / (search) and Ctrl-<Space> to ? (backwards search)
-map <space> /
-map <C-space> ?
+" Save
+nnoremap <leader>w :w!<CR>
 
-" Disable highlight when <leader><cr> is pressed
-map <silent> <leader><cr> :noh<cr>
+" NERDTree toggle
+nnoremap <C-n> :NERDTreeToggle<CR>
 
-" Smart way to move between windows
-map <C-j> <C-W>j
-map <C-k> <C-W>k
-map <C-h> <C-W>h
-map <C-l> <C-W>l
 
-" Close the current buffer
-map <leader>bd :Bclose<cr>:tabclose<cr>gT
+" FZF
+nnoremap <leader>f :Files<CR>
+nnoremap <leader>b :Buffers<CR>
+nnoremap <leader>r :Rg<CR>
+nnoremap <leader>h :History<CR>
 
-" Close all the buffers
-map <leader>ba :bufdo bd<cr>
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => COC AUTOCOMPLETE (VS CODE STYLE)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-map <leader>l :bnext<cr>
-map <leader>h :bprevious<cr>
+" Use Tab / Shift-Tab to navigate popup
+inoremap <silent><expr> <Tab> coc#pum#visible() ? coc#pum#next(1) : coc#refresh()
+inoremap <silent><expr> <S-Tab> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
 
-" Useful mappings for managing tabs
-map <leader>tn :tabnew<cr>
-map <leader>to :tabonly<cr>
-map <leader>tc :tabclose<cr>
-map <leader>tm :tabmove
-map <leader>t<leader> :tabnext
+" Enter confirms selection
+inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm() : "\<CR>"
 
-" Let 'tl' toggle between this and the last accessed tab
-let g:lasttab = 1
-nmap <Leader>tl :exe "tabn ".g:lasttab<CR>
-au TabLeave * let g:lasttab = tabpagenr()
+" Trigger completion manually
+inoremap <silent><expr> <C-Space> coc#refresh()
 
-" Opens a new tab with the current buffer's path
-" Super useful when editing files in the same directory
-map <leader>te :tabedit <C-r>=expand("%:p:h")<cr>/
+" Optional navigation
+inoremap <expr> <C-j> coc#pum#visible() ? coc#pum#next(1) : "\<C-j>"
+inoremap <expr> <C-k> coc#pum#visible() ? coc#pum#prev(1) : "\<C-k>"
 
-" Switch CWD to the directory of the open buffer
-map <leader>cd :cd %:p:h<cr>:pwd<cr>
+" Highlight symbol like VS Code
+autocmd CursorHold * silent call CocActionAsync('highlight')
 
-" Specify the behavior when switching between buffers
-try
-  set switchbuf=useopen,usetab,newtab
-  set stal=2
-catch
-endtry
-
-" Return to last edit position when opening files.
-au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
-
-""""""""""""""""""""""""""""""
-" => Status line
-""""""""""""""""""""""""""""""
-
-" Always show the status line
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => STATUSLINE
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set laststatus=2
-
-" Format the status line
-set statusline=\ %{HasPaste()}%F%m%r%h\ %w\ \ CWD:\ %r%{getcwd()}%h\ \ \ Line:\ %l\ \ Column:\ %c
-
-" Airline theme settings
-let g:airline_theme = 'gruvbox'
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#branch#enabled = 1
-let g:airline_powerline_fonts = 1
+let g:airline_theme='gruvbox'
+let g:airline_powerline_fonts=1
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Editing mappings
+" => AUTO CLEAN WHITESPACE
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Remap VIM 0 to first non-blank character
-map 0 ^
-
-" Move a line of text using ALT+[jk] or Command+[jk] on mac
-nmap <M-j> mz:m+<cr>`z
-nmap <M-k> mz:m-2<cr>`z
-vmap <M-j> :m'>+<cr>`<my`>mzgv`yo`z
-vmap <M-k> :m'<-2<cr>`>my`<mzgv`yo`z
-
-if has("mac") || has("macunix")
-  nmap <D-j> <M-j>
-  nmap <D-k> <M-k>
-  vmap <D-j> <M-j>
-  vmap <D-k> <M-k>
-endif
-
-" Delete trailing white space on save, useful for some filetypes ;)
-fun! CleanExtraSpaces()
-    let save_cursor = getpos(".")
-    let old_query = getreg('/')
-    silent! %s/\s\+$//e
-    call setpos('.', save_cursor)
-    call setreg('/', old_query)
-endfun
-
-if has("autocmd")
-    autocmd BufWritePre *.txt,*.js,*.py,*.wiki,*.sh,*.coffee :call CleanExtraSpaces()
-endif
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Spell checking
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Pressing ,ss will toggle and untoggle spell checking
-map <leader>ss :setlocal spell!<cr>
-
-" Shortcuts using <leader>
-map <leader>sn ]s
-map <leader>sp [s
-map <leader>sa zg
-map <leader>s? z=
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Misc
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Remove the Windows ^M - when the encodings gets messed up
-noremap <Leader>m mmHmt:%s/<C-V><cr>//ge<cr>'tzt'm
-
-" Quickly open a buffer for scribble
-map <leader>q :e ~/buffer<cr>
-
-" Quickly open a markdown buffer for scribble
-map <leader>x :e ~/buffer.md<cr>
-
-" Toggle paste mode on and off
-map <leader>pp :setlocal paste!<cr>
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Helper functions
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" Returns true if paste mode is enabled
-function! HasPaste()
-    if &paste
-        return 'PASTE MODE  '
-    endif
-    return ''
+function! CleanExtraSpaces()
+  let save_cursor = getpos(".")
+  silent! %s/\s\+$//e
+  call setpos('.', save_cursor)
 endfunction
 
-" Don't close window, when deleting a buffer
-command! Bclose call <SID>BufcloseCloseIt()
-function! <SID>BufcloseCloseIt()
-    let l:currentBufNum = bufnr("%")
-    let l:alternateBufNum = bufnr("#")
+autocmd BufWritePre * call CleanExtraSpaces()
 
-    if buflisted(l:alternateBufNum)
-        buffer #
-    else
-        bnext
-    endif
-
-    if bufnr("%") == l:currentBufNum
-        new
-    endif
-
-    if buflisted(l:currentBufNum)
-        execute("bdelete! ".l:currentBufNum)
-    endif
-endfunction
-
-function! CmdLine(str)
-    call feedkeys(":" . a:str)
-endfunction
-
-function! VisualSelection(direction, extra_filter) range
-    let l:saved_reg = @"
-    execute "normal! vgvy"
-
-    let l:pattern = escape(@", "\\/.*'$^~[]")
-    let l:pattern = substitute(l:pattern, "\n$", "", "")
-
-    if a:direction == 'gv'
-        call CmdLine("Ack '" . l:pattern . "' " )
-    elseif a:direction == 'replace'
-        call CmdLine("%s" . '/'. l:pattern . '/')
-    endif
-
-    let @/ = l:pattern
-    let @" = l:saved_reg
-endfunction
-
-" function! AirlineInit()
-"   let g:airline_section_a = airline#section#create(['mode',' ','branch'])
-"   let g:airline_section_b = airline#section#create_left(['ffenc','hunks','%f'])
-"   let g:airline_section_c = airline#section#create(['filetype'])
-"   let g:airline_section_x = airline#section#create(['%P'])
-"   let g:airline_section_y = airline#section#create(['%B'])
-"   let g:airline_section_z = airline#section#create_right(['%l','%c'])
-" endfunction
-" autocmd VimEnter * call AirlineInit()
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => COC EXTENSIONS
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:coc_global_extensions = [
+      \ 'coc-tsserver',
+      \ 'coc-json',
+      \ 'coc-html',
+      \ 'coc-css',
+      \ 'coc-emmet'
+      \ ]

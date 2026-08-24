@@ -1,0 +1,39 @@
+# Formulae excluded from brewfile.core (the work profile).
+# One formula name per line; # comments and blank lines are ignored.
+# Tap-scoped formulae (name contains "/") are excluded automatically.
+
+# Pentest / security tooling - keep off corporate hardware
+aircrack-ng
+exploitdb
+hashcat
+hcxtools
+hydra
+netcat
+nmap
+sqlmap
+theharvester
+
+# VPN - office provides its own
+openvpn
+
+# Media ripping / download
+cabextract
+cdrtools
+ffmpeg
+libass
+wimlib
+yt-dlp
+
+# Crypto
+monero
+
+# Heavy servers / model runners
+mysql
+ollama
+
+# iPhone / device personal tooling
+libimobiledevice
+libusbmuxd
+
+# Personal Mac automation
+sleepwatcher

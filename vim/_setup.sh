@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
 
-source ../misc.sh
+set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../misc.sh"
+
+echo "📝 Setting up Vim..."
+
+# ---------------------------------------
+# Install Vim via Homebrew
+# ---------------------------------------
 install_brew_pkg vim
 
-link "${PWD}/vim" "${HOME}/.vim"
-link "${PWD}/vimrc" "${HOME}/.vimrc"
+# ---------------------------------------
+# Symlinks
+# ---------------------------------------
+safe_link "${SCRIPT_DIR}/vim" "${HOME}/.vim"
+safe_link "${SCRIPT_DIR}/vimrc" "${HOME}/.vimrc"
+
+echo "✅ Vim setup complete"

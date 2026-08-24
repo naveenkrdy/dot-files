@@ -1,18 +1,16 @@
-tap "bootoption/repo"
-tap "buo/cask-upgrade"
-tap "epk/epk"
-tap "homebrew/bundle"
-tap "homebrew/cask"
-tap "homebrew/cask-fonts"
-tap "homebrew/cask-versions"
-tap "homebrew/core"
-tap "homebrew/services"
-tap "krish-sysadmin/virt-manager"
-tap "nrlquaker/createzap"
-tap "popcorn-official/popcorn-desktop", "https://github.com/popcorn-official/popcorn-desktop.git"
-tap "sidneys/homebrew"
+tap "anomalyco/tap", trusted: true
+tap "buo/cask-upgrade", trusted: true
+tap "epk/epk", trusted: true
+tap "jundot/omlx", "https://github.com/jundot/omlx", trusted: true
+tap "mesamirh/moviebox-tui", trusted: true
+tap "scouzi1966/afm", trusted: true
+tap "shaunsingh/sfmono-nerd-font-ligaturized", "https://github.com/shaunsingh/homebrew-SFMono-Nerd-Font-Ligaturized", trusted: true
+tap "techopolis/tap", trusted: true
+tap "ttscoff/thelab"
 # Next-generation aircrack with lots of new features
 brew "aircrack-ng"
+# Cryptography and SSL/TLS Toolkit
+brew "openssl@3"
 # Download with resuming and segmented downloading
 brew "aria2"
 # Automatic configure script builder
@@ -21,26 +19,36 @@ brew "autoconf"
 brew "bash"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Arbitrary precision numeric processing language
+brew "bc"
 # GNU binary tools for native development
 brew "binutils"
 # Interpreted, interactive, object-oriented programming language
-brew "python@3.11"
+brew "python@3.14"
 # Fancy interface to the Python interpreter
 brew "bpython"
+# Resource monitor. C++ version and continuation of bashtop and bpytop
+brew "btop"
+# Incredibly fast JavaScript runtime, bundler, test runner, and package manager
+brew "bun"
 # Extract files from Microsoft cabinet files
 brew "cabextract"
-# Interpreted, interactive, object-oriented programming language
-brew "python@3.9"
+# Multi-shell multi-command argument completer
+brew "carapace"
 # CD/DVD/Blu-ray premastering and recording software
 brew "cdrtools"
+# Versatile and fast Unicode/ASCII/ANSI graphics renderer
+brew "chafa"
 # Print information about OpenCL platforms and devices
 brew "clinfo"
 # Cross-platform make
 brew "cmake"
 # Powerful, clean, object-oriented scripting language
-brew "ruby"
+brew "ruby", link: false
 # Dependency manager for Cocoa projects
 brew "cocoapods"
+# Container runtimes on MacOS (and Linux) with minimal setup
+brew "colima"
 # GNU File, Shell, and Text utilities
 brew "coreutils"
 # Reimplementation of ctags(1)
@@ -51,34 +59,38 @@ brew "curl"
 brew "diffutils"
 # Load/unload environment variables based on $PWD
 brew "direnv"
+# Pack, ship and run any application as a lightweight container
+brew "docker", link: false
 # Convert text between DOS, UNIX, and Mac formats
 brew "dos2unix"
 # Classic UNIX line editor
 brew "ed"
-# Modern replacement for 'ls'
-brew "exa"
 # Database of public exploits and corresponding vulnerable software
 brew "exploitdb"
-# Subtitle renderer for the ASS/SSA subtitle format
-brew "libass"
-# Compression/decompression library aiming for high speed
-brew "snappy"
-# Play, record, convert, and stream audio and video
+# Modern, maintained replacement for ls
+brew "eza"
+# Simple, fast and user-friendly alternative to find
+brew "fd"
+# Play, record, convert, and stream select audio and video codecs
 brew "ffmpeg"
 # Banner-like program prints strings as ASCII art
 brew "figlet"
-# Utility to determine file types
-brew "file-formula"
 # Collection of GNU find, xargs, and locate
 brew "findutils"
 # User-friendly command-line shell for UNIX-like operating systems
 brew "fish"
+# Command-line outline and bitmap font editor/converter
+brew "fontforge"
 # Scriptable ping program for checking if multiple hosts are up
 brew "fping"
 # Command-line fuzzy finder written in Go
 brew "fzf"
 # GNU awk utility
 brew "gawk"
+# Open-source, cross-platform JavaScript runtime environment
+brew "node"
+# Interact with Google Gemini AI models from the command-line
+brew "gemini-cli"
 # GitHub command-line tool
 brew "gh"
 # Distributed revision control system
@@ -91,7 +103,7 @@ brew "gnu-sed"
 brew "gnu-tar"
 # GNU implementation of which utility
 brew "gnu-which"
-# GNU Pretty Good Privacy (PGP) package
+# GNU Privacy Guard (OpenPGP)
 brew "gnupg"
 # Open source programming language to build simple/reliable/efficient software
 brew "go"
@@ -119,32 +131,46 @@ brew "inetutils"
 brew "iproute2mac"
 # Lightweight and flexible command-line JSON processor
 brew "jq"
+# Simple terminal UI for git commands
+brew "lazygit"
 # DNS library written in C
 brew "ldns"
 # Pager program similar to more
 brew "less"
+# Subtitle renderer for the ASS/SSA subtitle format
+brew "libass"
 # USB multiplexor library for iOS devices
 brew "libusbmuxd"
 # Library to communicate with iOS devices natively
 brew "libimobiledevice"
+# Clone of ls with colorful output, file type icons, and more
+brew "lsd"
 # Text-based web browser
 brew "lynx"
 # System information fetcher, with an emphasis on performance and minimalism
 brew "macchina"
 # Mac App Store command-line interface
 brew "mas"
+# Deep clean and optimize your Mac
+brew "mole"
 # Official Monero wallet and CPU miner
 brew "monero"
 # Open source relational database management system
-brew "mysql", restart_service: true
+brew "mysql"
 # Free (GNU) replacement for the Pico text editor
 brew "nano"
+# Ambitious Vim-fork focused on extensibility and agility
+brew "neovim"
 # Utility for managing network connections
 brew "netcat"
 # Port scanning utility for large networks
 brew "nmap"
-# Platform built on V8 to build network applications
-brew "node"
+# Libraries for security-enabled client and server applications
+brew "nss"
+# A new type of shell
+brew "nushell"
+# Create, run, and share large language models (LLMs)
+brew "ollama"
 # OpenBSD freely-licensed SSH connectivity tools
 brew "openssh"
 # SSL/TLS VPN implementing OSI layer 2 or 3 secure network extension
@@ -152,17 +178,21 @@ brew "openvpn"
 # Highly capable, feature-rich programming language
 brew "perl"
 # General-purpose scripting language
-brew "php", restart_service: true
+brew "php"
 # Python dependency management tool
 brew "pipenv"
 # Python interface to Tcl/Tk
-brew "python-tk@3.9"
-# Cross-platform application and UI framework
-brew "qt@5", link: true
+brew "python-tk@3.14"
+# Interpreted, interactive, object-oriented programming language
+brew "python@3.11"
 # Perl-powered file rename script with many helpful built-ins
 brew "rename"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
 # Utility that provides fast incremental file transfer
 brew "rsync"
+# CLI proxy to minimize LLM token consumption
+brew "rtk"
 # Shell Script Compiler
 brew "shc"
 # Static analysis and lint tool, for (ba)sh scripts
@@ -173,18 +203,20 @@ brew "shfmt"
 brew "sleepwatcher"
 # SMART hard drive monitoring
 brew "smartmontools"
-# Command-line interface for https://speedtest.net bandwidth tests
-brew "speedtest-cli"
+# Compression/decompression library aiming for high speed
+brew "snappy"
 # Penetration testing for SQL injection and database servers
 brew "sqlmap"
+# Cross-shell prompt for astronauts
+brew "starship"
+# Organize software neatly under a single directory tree (e.g. /usr/local)
+brew "stow"
 # Version control system designed to be a better CVS
 brew "subversion"
-# Tool to enforce Swift style and conventions
-brew "swiftlint"
+# General purpose fuzzy finder TUI
+brew "television"
 # Gather materials from public sources (for pen testers)
 brew "theharvester"
-# Simplified and community-driven man pages
-brew "tldr"
 # Terminal multiplexer
 brew "tmux"
 # CLI tool that moves files or folder to the trash
@@ -193,6 +225,8 @@ brew "trash"
 brew "tree"
 # Extraction utility for .zip compressed archives
 brew "unzip"
+# Extremely fast Python package installer and resolver, written in Rust
+brew "uv"
 # Vi 'workalike' with many additional features
 brew "vim"
 # Tool for creating isolated virtual python environments
@@ -205,90 +239,94 @@ brew "wdiff"
 brew "wget"
 # Library to create, extract, and modify Windows Imaging files
 brew "wimlib"
-# Graphical network analyzer and capture tool
-brew "wireshark", link: false
 # JavaScript package manager
 brew "yarn"
-# Download YouTube videos from the command-line
-brew "youtube-dl"
+# Blazing fast terminal file manager written in Rust, based on async I/O
+brew "yazi"
+# Feature-rich command-line audio/video downloader
+brew "yt-dlp"
+# Shell extension to navigate your filesystem faster
+brew "zoxide"
 # UNIX shell (command interpreter)
 brew "zsh"
-# EFI boot menu manipulation for macOS
-brew "bootoption/repo/bootoption"
-# Offline NT Password Editor
-brew "sidneys/homebrew/chntpw"
+# Blazingly fast Zsh syntax highlighter
+brew "zsh-patina"
+# The AI coding agent built for the terminal.
+brew "anomalyco/tap/opencode"
+# Stream movies, shows, anime, and live TV from your terminal
+brew "mesamirh/moviebox-tui/moviebox-tui"
+# Apple Foundation Models + MLX local models — OpenAI-compatible API, WebUI, all Swift
+brew "scouzi1966/afm/afm"
+# Swift CLI for Apple Foundation Models and MLX models
+brew "techopolis/tap/perspective"
+# Unified Markdown processor supporting CommonMark, GFM, MultiMarkdown, and Kramdown
+brew "ttscoff/thelab/apex", trusted: true
 # View, print, and comment on PDF documents
 cask "adobe-acrobat-reader"
-# Collection of apps and services for photography, design, video, web, and UX
-cask "adobe-creative-cloud"
+# Keyboard-driven screen annotation tool
+cask "annotate"
+# Agent orchestration platform
+cask "antigravity"
 # Allows connection to a computer remotely
 cask "anydesk"
 # Inspect application bundles
 cask "apparency"
 # Application uninstaller
 cask "appcleaner"
-# Audio utility
-cask "background-music"
 # Tool to flash OS images to SD cards & USB drives
 cask "balenaetcher"
 # Lock/unlock Apple computers using the proximity of a bluetooth low energy device
 cask "bleunlock"
-# GUI for automatically saving SHSH blobs
-cask "blobsaver"
 # Monitors common persistence locations
 cask "blockblock"
-# Tool to list all active shortcuts of the current application
-cask "cheatsheet"
-# Jailbreak for iPhone 5s through iPhone X, iOS 12.0 and up
-cask "checkra1n"
+# Web browser focusing on privacy
+cask "brave-browser"
+# Terminal-based AI coding assistant
+cask "claude-code"
 # Free app that makes your Internet safer
 cask "cloudflare-warp"
-# Tool to show live information about the batteries in various devices
-cask "coconutbattery"
+# OpenAI's coding agent that runs in your terminal
+cask "codex"
+# Write, edit, and chat about your code with AI
+cask "cursor"
 # Voice and text chat software
 cask "discord"
-# Bitcoin thin client
-cask "electrum"
+# Window peeking utility app
+cask "dockdoor"
+# App to build and share containerised applications and microservices
+cask "docker-desktop"
+# Dock replacement
+cask "dockfix"
 # Launcher for *Epic Games* games
 cask "epic-games"
-# Desktop wallet for cryptocurrency assets
-cask "exodus"
-# Reimagine your terminal
-cask "fig"
+# Excalidraw client
+cask "excalidrawz"
 # Web browser
 cask "firefox"
-# Programming font
 cask "font-anonymous-pro"
-# Developer targeted fonts with a high number of glyphs
 cask "font-blex-mono-nerd-font"
-# Version of Cascadia Code without ligatures
 cask "font-cascadia-mono"
 cask "font-cousine"
-# Free monospaced font with programming ligatures
+cask "font-departure-mono"
 cask "font-fira-code"
-# Typeface made for developers
+cask "font-fira-code-nerd-font"
+cask "font-hack-nerd-font"
 cask "font-jetbrains-mono"
-# Developer targeted fonts with a high number of glyphs
 cask "font-jetbrains-mono-nerd-font"
-# Developer targeted fonts with a high number of glyphs
+cask "font-monaspace"
 cask "font-roboto-mono-nerd-font"
-cask "font-sf-mono-nerd-font"
-# Sans-serif variant of "San Francisco" by Apple
+cask "font-sf-mono-nerd-font-ligaturized"
 cask "font-sf-pro"
-cask "font-source-sans-pro"
-# Download accelerator and organizer
+# Font editor and converter for outline and bitmap fonts
+cask "fontforge-app"
+# Download accelerator and organiser
 cask "free-download-manager"
-cask "gitter"
-# Utility to fix grammar errors and style issues in text
-cask "grammarly"
-# Hackintosh patching tool
-cask "hackintool"
 # Hex editor focussing on speed
 cask "hex-fiend"
+# Menu bar application that displays the CPU speed limit due to thermal issues
+cask "hot"
 # Free and open-source media player
 cask "iina"
-# Power usage monitoring tool enabled for Intel Core processors
-cask "intel-power-gadget"
 # System monitoring app
 cask "istat-menus"
 # JetBrains tools manager
@@ -297,86 +335,82 @@ cask "jetbrains-toolbox"
 cask "knockknock"
 # Utility that shows the latest app updates
 cask "latest"
-# Create, manage and debug system- and user services
+# Create, manage and debug system and user services
 cask "launchcontrol"
 # Host-based application firewall
 cask "little-snitch"
-# Clipboard manager
-cask "maccy"
+# Discover, download, and run local LLMs
+cask "lm-studio"
+# Screen and video recording software
+cask "loom"
 # ACPI Machine Language (AML) compiler and IDE
 cask "maciasl"
-# Detailed information on every Apple product ever made
-cask "mactracker"
 # Utility to open, create and modify archive files
 cask "maczip"
 # Visual diff and merge tool
 cask "meld"
-# Penetration testing framework
-cask "metasploit"
-# Provides updates to various Microsoft products
-cask "microsoft-auto-update"
-# Web browser
+# Multi-platform web browser
 cask "microsoft-edge"
 # Office suite
 cask "microsoft-office"
 # Meet, chat, call, and collaborate in just one place
 cask "microsoft-teams"
-# Untraceable cryptocurrency wallet
-cask "monero-wallet"
+# Interactive tool for analyzing MongoDB data
+cask "mongodb-compass"
+# Knowledge base that works on top of a local folder of plain text Markdown files
+cask "obsidian"
 # Securely and anonymously share files, host websites, and chat with friends
 cask "onionshare"
-# Finder Toolbar app to open the current directory in Terminal or Editor
-cask "openinterminal"
+# AI coding agent desktop client
+cask "opencode-desktop"
+# Whisper dictation/transcription app
+cask "opensuperwhisper"
 # Client program for the OpenVPN Access Server
 cask "openvpn-connect"
-# JDK from Oracle
-cask "oracle-jdk"
-# JDK from Oracle
-cask "oracle-jdk17"
+# Replacement for Docker Desktop
+cask "orbstack"
 # Monitors computer mic and webcam
 cask "oversight"
-# Customize and maintain app icons
+# Customise and maintain app icons
 cask "pictogram"
 # Property list and JSON editor
 cask "plistedit-pro"
-# Plist file editor
-cask "plistedplus"
+# Collaboration platform for API development
+cask "postman"
 # Graphical user interface for the 'defaults' command
 cask "prefs-editor"
 # VPN client focusing on security
 cask "protonvpn"
-# QuickLook generator for Markdown files
+# Quick Look generator for Markdown files
 cask "qlmarkdown"
-# QuickLook plugin for CSV files
+# Quick Look plugin for CSV files
 cask "quicklook-csv"
-# Archive manager for data compression and backups
-cask "rar"
-# Move and resize windows using keyboard shortcuts or snap areas
-cask "rectangle"
-# Scans, detects, and monitors keyboard taps
-cask "reikey"
-# Screenshot measurement and annotation tool
-cask "shottr"
+# Control your tools with a few keystrokes
+cask "raycast"
 # Instant messaging application focusing on security
 cask "signal"
-# Video chat, voice call and instant messaging application
-cask "skype"
 # Team communication and collaboration software
 cask "slack"
 # Sound and audio controller
 cask "soundsource"
 # Music streaming service
 cask "spotify"
+# System monitor for the menu bar
+cask "stats"
 # Video game digital distribution service
 cask "steam"
-# Application for inspecting installer packages
-cask "suspicious-package"
+# Terminal for orchestrating agents
+cask "superset"
 # Quicklook extension for source files
 cask "syntax-highlight"
 # Remote access and connectivity software focused on security
 cask "teamviewer"
 # Messaging app with a focus on speed and security
 cask "telegram"
+# JDK from the Eclipse Foundation (Adoptium)
+cask "temurin"
+# JDK from the Eclipse Foundation (Adoptium)
+cask "temurin@21"
 # General-purpose text editor
 cask "textmate"
 # Web browser focusing on security
@@ -385,81 +419,81 @@ cask "tor-browser"
 cask "tradingview"
 # VPN client for secure internet access and private browsing
 cask "tunnelbear"
-# Run commands and display their output on the desktop
-cask "ubersicht"
-# Virtualizer for x86 hardware
-cask "virtualbox"
 # Open-source code editor
 cask "visual-studio-code"
 # Multimedia player
 cask "vlc"
-# Create, manage, and run virtual machines
-cask "vmware-fusion"
+# Live wallpaper app
+cask "wallspace"
+# Rust-based terminal
+cask "warp"
 # Torrent streaming application
 cask "webtorrent"
-# Shows a files cryptographic signing information
-cask "whatsyoursign"
 # VPN client for secure internet access and private browsing
 cask "windscribe"
 # Network protocol analyzer
-cask "wireshark"
-# Apache distribution containing MySQL, PHP, and Perl
-cask "xampp"
-# Multi-platform graphical interface for official Nmap Security Scanner
-cask "zenmap"
+cask "wireshark-app"
+# Multiplayer code editor
+cask "zed"
+# Gecko based web browser
+cask "zen"
 # Video communication and virtual meeting platform
 cask "zoom"
-mas "Amphetamine", id: 937984704
-mas "Cinebench", id: 1438772273
-mas "Disk Speed Test", id: 425264550
-mas "Image2icon", id: 992115977
-mas "OwlOCR", id: 1499181666
-mas "RunCat", id: 1429033973
-mas "Shazam", id: 897118787
+mas "Menuist", id: 6737160756
 mas "Xcode", id: 497799835
 vscode "aaron-bond.better-comments"
-vscode "AloyseTech.hex-array-formatter"
+vscode "ahmedhatem.kintsugi"
+vscode "aloysetech.hex-array-formatter"
 vscode "antfu.icons-carbon"
+vscode "anthropic.claude-code"
 vscode "appulate.filewatcher"
 vscode "be5invis.vscode-icontheme-nomo-dark"
+vscode "beatzoid.http-status-codes"
 vscode "bierner.markdown-preview-github-styles"
 vscode "bmalehorn.shell-syntax"
+vscode "burkeholland.simple-react-snippets"
 vscode "cdonohue.quill-icons"
-vscode "ChakrounAnas.turbo-console-log"
+vscode "chakrounanas.turbo-console-log"
 vscode "christian-kohler.path-intellisense"
-vscode "CoenraadS.disableligatures"
+vscode "clawd.clawd-terminal-focus"
+vscode "coenraads.disableligatures"
+vscode "continue.continue"
 vscode "dae.vscode-mac-color-picker"
-vscode "DavidAnson.vscode-markdownlint"
+vscode "davidanson.vscode-markdownlint"
 vscode "dbaeumer.vscode-eslint"
+vscode "dotjoshjohnson.xml"
+vscode "dsznajder.es7-react-js-snippets"
 vscode "eamodio.gitlens"
-vscode "ecmel.vscode-html-css"
-vscode "EliverLara.mars"
-vscode "EliverLara.sweet-vscode-icons"
+vscode "eliverlara.mars"
+vscode "eliverlara.sweet-vscode-icons"
+vscode "esbenp.prettier-vscode"
 vscode "fabioz.vscode-pydev"
 vscode "fisheva.eva-theme"
+vscode "fogio.jetbrains-product-icon-theme"
 vscode "formulahendry.code-runner"
 vscode "foxundermoon.shell-format"
+vscode "gdp.delugelang"
 vscode "gio00.convertplist"
-vscode "GitHub.copilot"
-vscode "GitHub.github-vscode-theme"
-vscode "IBM.output-colorizer"
+vscode "github.github-vscode-theme"
+vscode "ibm.output-colorizer"
 vscode "idleberg.applescript"
 vscode "illixion.vscode-vibrancy-continued"
-vscode "iocave.customize-ui"
-vscode "iocave.monkey-patch"
-vscode "JacobKucera.codepen-theme"
-vscode "JacobZwang.http-status-code-index"
+vscode "jacobkucera.codepen-theme"
+vscode "jakewilson.vscode-cdnjs"
+vscode "jdinhlife.gruvbox"
 vscode "jtlowe.vscode-icon-theme"
-vscode "Kasik96.swift"
 vscode "klarefrank.codepen-nights"
 vscode "lusignan.nautical-twilight"
 vscode "mads-hartmann.bash-ide-vscode"
+vscode "magicstack.magicpython"
 vscode "mateuszchudyk.hexinspector"
 vscode "maziac.asm-code-lens"
 vscode "miguelsolorio.fluent-icons"
 vscode "miguelsolorio.min-theme"
+vscode "miloraddjordjevic95.vscode-box-shadow-generator"
+vscode "mongodb.mongodb-vscode"
 vscode "mrmlnc.vscode-postcss-sorting"
-vscode "ms-edgedevtools.vscode-edge-devtools"
+vscode "ms-python.debugpy"
 vscode "ms-python.python"
 vscode "ms-python.vscode-pylance"
 vscode "ms-toolsai.jupyter"
@@ -472,39 +506,46 @@ vscode "ms-vscode-remote.remote-ssh-edit"
 vscode "ms-vscode.cmake-tools"
 vscode "ms-vscode.cpptools"
 vscode "ms-vscode.cpptools-extension-pack"
-vscode "ms-vscode.cpptools-themes"
 vscode "ms-vscode.hexeditor"
+vscode "ms-vscode.live-server"
 vscode "ms-vscode.remote-explorer"
 vscode "naumovs.color-highlight"
 vscode "nhoizey.gremlins"
-vscode "PKief.material-icon-theme"
-vscode "PKief.material-product-icons"
+vscode "nizmosis.rainbow-functions"
+vscode "pkief.material-icon-theme"
+vscode "pkief.material-product-icons"
 vscode "pranaygp.vscode-css-peek"
 vscode "rangav.vscode-thunder-client"
 vscode "rastikerdar.vscode-seedling-icon-theme"
 vscode "redhat.vscode-xml"
 vscode "redhat.vscode-yaml"
-vscode "Remisa.shellman"
+vscode "remisa.shellman"
 vscode "richie5um2.vscode-sort-json"
-vscode "ritwickdey.LiveServer"
-vscode "RobbOwen.synthwave-vscode"
+vscode "ritwickdey.liveserver"
+vscode "robbowen.synthwave-vscode"
 vscode "rogalmic.bash-debug"
-vscode "sainnhe.everforest"
+vscode "rokoroku.vscode-theme-darcula"
+vscode "seansassenrath.vscode-theme-superonedark"
 vscode "sharat.vscode-brewfile"
 vscode "shardulm94.trailing-spaces"
-vscode "SolarLiner.linux-themes"
-vscode "solnurkarim.html-to-css-autocompletion"
-vscode "StevenPhan.framer-syntax"
-vscode "Thog.vscode-asl"
+vscode "solarliner.linux-themes"
+vscode "stevenphan.framer-syntax"
+vscode "subframe7536.custom-ui-style"
+vscode "tarrow.css-class-intellisense"
+vscode "thog.vscode-asl"
 vscode "timonwong.shellcheck"
+vscode "tonka3000.raycast"
 vscode "twxs.cmake"
-vscode "Tyriar.sort-lines"
+vscode "tyriar.sort-lines"
 vscode "usernamehw.errorlens"
-vscode "VisualStudioExptTeam.intellicode-api-usage-examples"
-vscode "VisualStudioExptTeam.vscodeintellicode"
-vscode "XadillaX.viml"
+vscode "xadillax.viml"
+vscode "xav1ersue.code-glow"
 vscode "yandeu.five-server"
+vscode "yinfei.luahelper"
 vscode "yzhang.markdown-all-in-one"
+vscode "zaferayan.lorem-picsum"
 vscode "zh9528.file-size"
 vscode "zhouronghui.propertylist"
 vscode "zhuangtongfa.material-theme"
+uv "free-claude-code"
+uv "graphifyy"

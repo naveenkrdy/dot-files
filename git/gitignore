@@ -1,3 +1,15 @@
+# Editors and IDEs
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Zsh compiled files
+*.zwc
+
 # General
 .DS_Store
 .AppleDouble

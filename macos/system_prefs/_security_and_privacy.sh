@@ -1,5 +1,5 @@
 # Disabe GateKeeper
-sudo spctl --master-disable
+# sudo spctl --master-disable
 
 # Require password immediately after the computer went into sleep or screen saver mode
 # defaults write com.apple.screensaver askForPassword -int 1

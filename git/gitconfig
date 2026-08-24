@@ -1,11 +1,12 @@
-[user]
-	name = naveenkrdy
-	email = naveenk2908@gmail.com
+# Machine-local identity (user.name/user.email) lives in ~/.gitconfig.local,
+# written by git/_setup.sh - keeps work and personal emails out of the repo.
+[include]
+	path = ~/.gitconfig.local
 
 [core]
 	excludesfile = ~/.gitignore
 	autocrlf = false
-	safecrlf = true
+	safecrlf = warn
 
 [credential]
 	helper = osxkeychain
@@ -15,3 +16,31 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
+[init]
+	defaultBranch = main
+
+[pull]
+	rebase = true
+
+[push]
+	autoSetupRemote = true
+
+[fetch]
+	prune = true
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+	colorMoved = zebra
+
+[alias]
+	st = status -sb
+	co = checkout
+	br = branch
+	lg = log --oneline --graph --decorate --all
+	unstage = reset HEAD --
+	undo = reset --soft HEAD~1
+[http]
+	sslBackend = openssl

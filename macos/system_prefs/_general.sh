@@ -40,6 +40,20 @@ defaults write NSGlobalDomain NSCloseAlwaysConfirmsChanges -int 1
 # Close windows when quitting an application
 defaults write NSGlobalDomain NSQuitAlwaysKeepsWindows -bool false
 
+# Expand save panel by default
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+
+# Expand print panel by default
+defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
+defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
+
+# Don't auto-terminate idle background apps (Docker, herdr, LM Studio, etc.)
+defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
+
+# Save new documents to disk by default, not iCloud
+defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
+
 # Set number of recent items (Documents, Apps, and Servers):
 # for category in 'applications' 'documents' 'servers'; do
 #   /usr/bin/osascript -e "tell application \"System Events\" to tell appearance preferences to set recent ${category} limit to 0"

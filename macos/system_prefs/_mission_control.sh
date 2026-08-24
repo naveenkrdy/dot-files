@@ -5,7 +5,7 @@
 # defaults write com.apple.dock expose-group-by-app -bool false
 
 # Speed up Mission Control animation
-# defaults write com.apple.dock expose-animation-duration -float 0.1
+defaults write com.apple.dock expose-animation-duration -float 0.1
 
 # Hot corners
 # Possible values:
@@ -19,10 +19,10 @@
 # 10: Put display to sleep
 # 11: Launchpad
 # 12: Notification Center
-# Set Hot Corners { Botton left screen corner → Mission Control }
+# Set Hot Corners { Bottom left screen corner: Mission Control }
 defaults write com.apple.dock wvous-bl-corner -int 2
 defaults write com.apple.dock wvous-bl-modifier -int 0
 
-# Set Hot Corners { Botton right screen corner → Desktop }
+# Set Hot Corners { Bottom right screen corner: Desktop }
 defaults write com.apple.dock wvous-br-corner -int 4
 defaults write com.apple.dock wvous-br-modifier -int 0

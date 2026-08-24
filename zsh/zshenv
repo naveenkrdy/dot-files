@@ -1,0 +1,2 @@
+# user-local binaries: uv tool shims, pipx venvs, uv-managed pythons
+export PATH="$HOME/.local/bin:$PATH"

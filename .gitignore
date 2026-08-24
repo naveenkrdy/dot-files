@@ -4,3 +4,8 @@ antigen
 antigen.zsh
 plugged
 autoload
+antidote
+graphify-out/
+test.file
+zsh/zsh/cache/
+**/.claude/settings.local.json

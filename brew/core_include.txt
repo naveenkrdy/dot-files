@@ -1,0 +1,22 @@
+# Taps, casks, and tap-scoped formulae force-included in brewfile.core
+# despite the default work-profile filtering rules (see generate_core.sh):
+# normally only nerd-font casks, non-tap-scoped formulae, and the
+# buo/cask-upgrade tap survive. Anything listed here (by exact tap/brew/cask
+# token) is kept on top of that.
+# One name per line; # comments and blank lines are ignored.
+
+# Raycast beta channel is an in-app toggle, not a separate cask - installing
+# the regular "raycast" cask covers it.
+raycast
+annotate
+excalidrawz
+zen
+slack
+postman
+visual-studio-code
+spotify
+claude-code
+
+# moviebox-tui (tap-scoped formula + its tap)
+mesamirh/moviebox-tui
+mesamirh/moviebox-tui/moviebox-tui

@@ -1,0 +1,83 @@
+onboarding = false
+
+# ── Theme: Vesper (warm minimal dark) ────────────────────────────────
+[theme]
+name = "catppuccin"
+auto_switch = false
+
+[theme.custom]
+# Vesper/gruvbox comment gray (#928374) is intentionally low-contrast.
+# #bdae93 is gruvbox fg3 - readable without breaking the palette feel.
+subtext0 = "#bdae93"
+# Each theme ships its own solid sidebar color; reset it to blend with the terminal background.
+panel_bg = "reset"
+sidebar_bg = "reset"
+
+# ── UI ───────────────────────────────────────────────────────────────
+[ui]
+show_agent_labels_on_pane_borders = true
+agent_panel_sort = "priority"
+pane_borders = true
+pane_gaps = true                  # visual separation between splits
+hide_tab_bar_when_single_tab = true   # cleaner single-tab view
+
+# v0.7.4 switched expanded Space/Agent sidebar rows to a packed layout by
+# default; row_gap = 1 restores the pre-0.7.4 spacing.
+status_indicators = "symbols"
+[ui.sidebar.spaces]
+row_gap = 1
+
+[ui.sidebar.agents]
+row_gap = 1
+# line 1: session name; line 2: working/idle status, folder name dimmed on the right
+rows = [
+  ["state_icon", { token = "terminal_title_stripped", dim = false }],
+  ["state_text", { token = "workspace", dim = true }],
+]
+
+[ui.toast]
+delivery = "terminal"
+delay_seconds = 3                 # auto-dismiss after a few seconds
+
+[ui.toast.herdr]
+position = "top-right"
+
+# ── Keys: fuller keymap (all additions are unbound-by-default) ───────
+[keys]
+# Agent attention queue (unshifted h/j/k/l stay directional pane focus)
+next_agent          = "prefix+shift+j"
+previous_agent      = "prefix+shift+k"
+# Lateral workspace switching
+next_workspace      = "prefix+shift+l"
+previous_workspace  = "prefix+shift+h"
+# Jump straight to an agent row
+focus_agent         = "prefix+alt+1..9"
+# Toggle the two most recent panes; frees prefix+tab from cycle-next
+cycle_pane_next     = ""
+last_pane           = "prefix+tab"
+# Git worktrees (remove opens a confirmation dialog)
+open_worktree       = "prefix+shift+o"
+remove_worktree     = "prefix+alt+g"
+
+# ── Custom commands ────────────────────────────────────────────────────
+[[keys.command]]              # command bar: fuzzy-jump to any tab or agent
+key = "prefix+k"
+type = "shell"
+command = "herdr plugin action invoke open --plugin herdr-bar"
+
+[[keys.command]]              # toggle docked sidebar Explorer panel
+key = "prefix+f"
+type = "shell"
+command = "herdr plugin action invoke open-sidebar --plugin herdr-sidebar"
+
+[[keys.command]]              # move current tab's pane into a split of another tab (fzf picker)
+key = "prefix+alt+m"
+type = "popup"
+command = "bash '/Users/naveenkrdy/Documents/Repo/dot-files/herdr/move-pane-to-split.sh'"
+width = "60%"
+height = "50%"
+
+# ── Experimental ───────────────────────────────────────────────────────
+[experimental]
+pane_history = true
+switch_ascii_input_source_in_prefix = false
