@@ -1,33 +1,1363 @@
-# Fig pre block. Keep at the top of this file.
-# [[ -f "$HOME/.fig/shell/zshrc.pre.zsh" ]] && source "$HOME/.fig/shell/zshrc.pre.zsh"
+# =======================================
+# ~/.zshrc
+# =======================================
 
+# ---------------------------------------
+# Profiling
+# Uncomment while tuning startup
+# ---------------------------------------
 # zmodload zsh/zprof
 
-# Silence prompt login
-[[ ! -f ${HOME}/.hushlogin ]] && touch ${HOME}/.hushlogin
+# ---------------------------------------
+# Silence login message
+# ---------------------------------------
+[[ ! -f "$HOME/.hushlogin" ]] && touch "$HOME/.hushlogin"
 
-source_list=(
-    plugins
-    ls_colors
-    exports
-    aliases
-    functions
-    key_bindings
-	completions
-)
+# ---------------------------------------
+# Performance / safety tweaks
+# ---------------------------------------
+export ZSH_DISABLE_COMPFIX=true
 
-zsh_dir="${HOME}/.zsh"
-for file in "${source_list[@]}"; do
-    [[ -f ${zsh_dir}/${file}.zsh ]] && source ${zsh_dir}/${file}.zsh
-done
+# ---------------------------------------
+# Base directories
+# ---------------------------------------
+ZSH_DIR="$HOME/.zsh"
+ANTIDOTE_DIR="$ZSH_DIR/antidote"
+CACHE_DIR="$ZSH_DIR/cache"
+CACHE_FILE="$CACHE_DIR/plugins.zsh"
+[[ -d "$CACHE_DIR" ]] || mkdir -p "$CACHE_DIR"
 
-echo
+# ---------------------------------------
+# Terminal.app theme detection (light/dark)
+# Terminal.app has no built-in auto light/dark switching, so this
+# luminance-buckets the active window's actual background color via
+# AppleScript (~60-80ms) and switches EZA_COLORS/LS_COLORS/LESS_TERMCAP/
+# FZF/ZSH_HIGHLIGHT/prompt colors to match. Detection is done async so
+# shell startup stays fast: init applies the last cached theme instantly,
+# then re-detects in the background and snaps colors via TRAPUSR1 if it
+# changed. Not to be confused with $_PROMPT_THEME (compact/full layout).
+# ---------------------------------------
+typeset -g _TERM_THEME="dark"
+typeset -g _TERM_THEME_FILE="$CACHE_DIR/.term_theme"
 
+_term_theme_query() {
+  local rgb r g b
+  rgb=$(osascript -e 'tell application "Terminal" to background color of front window' 2>/dev/null)
+  [[ -z "$rgb" ]] && return 1
+  IFS=', ' read -r r g b <<< "$rgb"
+  [[ -z "$r" || -z "$g" || -z "$b" ]] && return 1
+  if (( (r + g + b) / 3 < 32768 )); then
+    print -r -- dark
+  else
+    print -r -- light
+  fi
+}
+
+_term_theme_detect() {
+  local result
+  result=$(_term_theme_query)
+  if [[ -z "$result" ]]; then
+    if [[ "$(defaults read -g AppleInterfaceStyle 2>/dev/null)" == "Dark" ]]; then
+      result="dark"
+    else
+      result="light"
+    fi
+  fi
+  print -r -- "$result"
+}
+
+_term_theme_apply() {
+  local theme="$1"
+  _TERM_THEME="$theme"
+
+  if [[ "$theme" == "light" ]]; then
+    # Tokyo Night Day (light)
+    export EZA_COLORS="hd=2;4:di=38;2;46;125;233:ln=38;2;0;113;151:lp=38;2;46;125;233:ex=38;2;88;117;57;1:da=38;2;161;166;197:sn=38;2;55;96;191:sb=38;2;97;114;176:uu=38;2;140;108;62:gu=38;2;97;114;176:ga=38;2;88;117;57:gm=38;2;140;108;62:gd=38;2;245;42;101"
+    export LESS_TERMCAP_mb=$'\e[1;31m'
+    export LESS_TERMCAP_md=$'\e[1;34m'
+    export LESS_TERMCAP_so=$'\e[01;44;30m'
+    export LESS_TERMCAP_us=$'\e[01;34m'
+    export LESS_TERMCAP_me=$'\e[0m'
+    export LESS_TERMCAP_se=$'\e[0m'
+    export LESS_TERMCAP_ue=$'\e[0m'
+    export LS_COLORS="di=38;2;46;125;233:ln=38;2;0;113;151:so=38;2;152;84;241:pi=38;2;140;108;62:ex=38;2;88;117;57;1:bd=38;2;46;125;233;1:cd=38;2;46;125;233;1:su=38;5;231;41:sg=38;5;231;43:tw=38;5;16;42:ow=38;5;16;42"
+    export FZF_DEFAULT_OPTS='--height=75% --layout=reverse --border --inline-info --cycle --color=fg:#2d3840,bg:#ffffff,hl:#0057b7,fg+:#000000,bg+:#e0e0e0,hl+:#b35900'
+    export BAT_THEME="OneHalfLight"
+
+    # Tokyo Night Day (light)
+    typeset -g _PC_GIT_CLEAN=$'\e[38;2;88;117;57m'
+    typeset -g _PC_GIT_DIRTY=$'\e[38;2;140;108;62m'
+    typeset -g _PC_GIT_STAGED=$'\e[38;2;46;125;233m'
+    typeset -g _PC_GIT_ACTION=$'\e[38;2;245;42;101m'
+    typeset -g _PC_GIT_AHEAD=$'\e[38;2;46;125;233m'
+    typeset -g _PC_GIT_BEHIND=$'\e[38;2;245;42;101m'
+    typeset -g _PC_GIT_STASH=$'\e[38;2;152;84;241m'
+    typeset -g _PC_GIT_UNTRACK=$'\e[38;2;161;166;197m'
+    typeset -g _PC_GIT_BRANCH_UNTRACK=$'\e[38;2;97;114;176m'
+    typeset -g _PC_GIT_BRANCH_MIXED=$'\e[38;2;140;108;62m'
+    typeset -g _PC_OK=$'\e[38;2;152;84;241m'
+    typeset -g _PC_ERR=$'\e[38;2;245;42;101m'
+    typeset -g _PC_BUSY=$'\e[38;2;140;108;62m'
+    typeset -g _PC_EXIT=$'\e[38;2;245;42;101m'
+    typeset -g _PC_SUDO=$'\e[38;2;245;42;101m'
+    typeset -g _PC_FOLDER=$'\e[38;2;97;114;176m'
+    typeset -g _PC_DIM=$'\e[38;2;161;166;197m'
+    typeset -g _PC_SSH=$'\e[38;2;0;113;151m'
+    typeset -g _PC_SSH_USER=$'\e[38;2;46;125;233m'
+    typeset -g _PC_RST=$'\e[0m'
+  else
+    # Tokyo Night (dark)
+    export EZA_COLORS="hd=2;4:di=38;2;122;162;247:ln=38;2;125;207;255:lp=38;2;122;162;247:ex=38;2;158;206;106;1:da=38;2;65;72;104:sn=38;2;192;202;245:sb=38;2;169;177;214:uu=38;2;224;175;104:gu=38;2;169;177;214:ga=38;2;158;206;106:gm=38;2;224;175;104:gd=38;2;247;118;142"
+    export LESS_TERMCAP_mb=$'\e[1;31m'
+    export LESS_TERMCAP_md=$'\e[1;33m'
+    export LESS_TERMCAP_so=$'\e[01;44;37m'
+    export LESS_TERMCAP_us=$'\e[01;37m'
+    export LESS_TERMCAP_me=$'\e[0m'
+    export LESS_TERMCAP_se=$'\e[0m'
+    export LESS_TERMCAP_ue=$'\e[0m'
+    export LS_COLORS="di=38;2;122;162;247:ln=38;2;125;207;255:so=38;2;187;154;247:pi=38;2;224;175;104:ex=38;2;158;206;106;1:bd=38;2;122;162;247;1:cd=38;2;122;162;247;1:su=38;5;231;41:sg=38;5;231;43:tw=38;5;16;42:ow=38;5;16;42"
+    export FZF_DEFAULT_OPTS='--height=75% --layout=reverse --border --inline-info --cycle --color=fg:#d0d0d0,bg:#1c1c1c,hl:#00afff,fg+:#ffffff,bg+:#303030,hl+:#ff8700'
+    export BAT_THEME="OneHalfDark"
+
+    # Tokyo Night (dark)
+    typeset -g _PC_GIT_CLEAN=$'\e[38;2;158;206;106m'
+    typeset -g _PC_GIT_DIRTY=$'\e[38;2;224;175;104m'
+    typeset -g _PC_GIT_STAGED=$'\e[38;2;122;162;247m'
+    typeset -g _PC_GIT_ACTION=$'\e[38;2;247;118;142m'
+    typeset -g _PC_GIT_AHEAD=$'\e[38;2;122;162;247m'
+    typeset -g _PC_GIT_BEHIND=$'\e[38;2;247;118;142m'
+    typeset -g _PC_GIT_STASH=$'\e[38;2;187;154;247m'
+    typeset -g _PC_GIT_UNTRACK=$'\e[38;2;65;72;104m'
+    typeset -g _PC_GIT_BRANCH_UNTRACK=$'\e[38;2;169;177;214m'
+    typeset -g _PC_GIT_BRANCH_MIXED=$'\e[38;2;224;175;104m'
+    typeset -g _PC_OK=$'\e[38;2;187;154;247m'
+    typeset -g _PC_ERR=$'\e[38;2;247;118;142m'
+    typeset -g _PC_BUSY=$'\e[38;2;224;175;104m'
+    typeset -g _PC_EXIT=$'\e[38;2;247;118;142m'
+    typeset -g _PC_SUDO=$'\e[38;2;247;118;142m'
+    typeset -g _PC_FOLDER=$'\e[38;2;169;177;214m'
+    typeset -g _PC_DIM=$'\e[38;2;65;72;104m'
+    typeset -g _PC_SSH=$'\e[38;2;125;207;255m'
+    typeset -g _PC_SSH_USER=$'\e[38;2;122;162;247m'
+    typeset -g _PC_RST=$'\e[0m'
+  fi
+
+  [[ -n "$LS_COLORS" ]] && zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+}
+
+TRAPUSR1() {
+  local new_theme
+  [[ -f "$_TERM_THEME_FILE" ]] && new_theme=$(<"$_TERM_THEME_FILE")
+  if [[ -n "$new_theme" && "$new_theme" != "$_TERM_THEME" ]]; then
+    _term_theme_apply "$new_theme"
+    zle && zle reset-prompt
+  fi
+}
+
+theme-refresh() {
+  local detected
+  detected=$(_term_theme_detect)
+  print -r -- "$detected" >| "$_TERM_THEME_FILE"
+  _term_theme_apply "$detected"
+  zle && zle reset-prompt
+}
+
+_term_theme_init() {
+  local cached="dark"
+  [[ -f "$_TERM_THEME_FILE" ]] && cached=$(<"$_TERM_THEME_FILE")
+  [[ -z "$cached" ]] && cached="dark"
+  _term_theme_apply "$cached"
+
+  if [[ -o interactive ]] && [[ "$TERM_PROGRAM" == "Apple_Terminal" ]]; then
+    (
+      local detected
+      detected=$(_term_theme_detect)
+      print -r -- "$detected" >| "$_TERM_THEME_FILE"
+      kill -s USR1 $$ 2>/dev/null
+    ) &!
+  fi
+}
+
+# ---------------------------------------
+# Homebrew detection
+# ---------------------------------------
+if [[ -x "/opt/homebrew/bin/brew" ]]; then
+  BREW_PREFIX="/opt/homebrew"
+elif [[ -x "/usr/local/bin/brew" ]]; then
+  BREW_PREFIX="/usr/local"
+fi
+
+# ---------------------------------------
+# Environment / exports
+# ---------------------------------------
+# Deduplicate PATH/FPATH on every exec zsh (bun, ruby, brew prepend repeatedly)
+typeset -gU path PATH fpath FPATH
+
+export PATH="$HOME/bin:$PATH"
+[[ -n "$BREW_PREFIX" ]] && export PATH="$BREW_PREFIX/opt/ruby/bin:$BREW_PREFIX/bin:$BREW_PREFIX/sbin:$PATH"
+
+# User local binaries
+[[ -d "$HOME/.lmstudio/bin" ]] && export PATH="$HOME/.lmstudio/bin:$PATH"
+[[ -d "$HOME/.antigravity/antigravity/bin" ]] && export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+[[ -d "$HOME/.cargo/bin" ]] && export PATH="$HOME/.cargo/bin:$PATH"
+
+export EDITOR='vim'
+export LC_ALL='en_US.UTF-8'
+export HOMEBREW_NO_ANALYTICS=1
+export PYTHONIOENCODING='UTF-8'
+# EZA_COLORS / LESS_TERMCAP_* / BAT_THEME are theme-dependent — set by
+# _term_theme_apply (called after plugin load, see "Load plugins" below).
+
+if command -v bat >/dev/null 2>&1; then
+  export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+  export MANROFFOPT="-c"
+else
+  export MANPAGER='less -s -M +Gg'
+fi
+
+# ---------------------------------------
+# History settings
+# ---------------------------------------
+export HISTSIZE=100000
+export SAVEHIST=100000
+export HISTFILE="${HOME}/.zsh_history"
+export HISTORY_IGNORE="(history|ls|cd)"
+export HISTTIMEFORMAT=""
+
+# ---------------------------------------
+# Oh My Zsh / use-omz settings
+# Must be set before plugin load
+# ---------------------------------------
+export DISABLE_AUTO_UPDATE="true"
+export DISABLE_UPDATE_PROMPT="true"
+export UPDATE_ZSH_DAYS=99999
+export DISABLE_AUTO_TITLE="true"
+
+# ---------------------------------------
+# Shell options
+# ---------------------------------------
+setopt AUTO_CD
+setopt EXTENDED_HISTORY
+setopt HIST_FIND_NO_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_REDUCE_BLANKS
+setopt HIST_SAVE_NO_DUPS
+setopt INC_APPEND_HISTORY
+setopt INTERACTIVE_COMMENTS
+setopt SHARE_HISTORY
+setopt NO_BEEP
+unsetopt PROMPT_SP
+unsetopt MENU_COMPLETE
+setopt AUTO_MENU
+
+# ---------------------------------------
+# Completion path
+# compinit is handled by use-omz
+# ---------------------------------------
+[[ -n "$BREW_PREFIX" ]] && FPATH="$BREW_PREFIX/share/zsh/site-functions:$FPATH"
+
+# ---------------------------------------
+# Completion UI settings
+# ---------------------------------------
+zstyle ':completion:*' verbose yes
+zstyle ':completion:*:options' description yes
+zstyle ':completion:*:descriptions' format $'\n\e[1;37m%d\e[0m'
+zstyle ':completion:*:messages' format $'%{\e[38;05;239m%} Message : %d%{\e[m%}'
+zstyle ':completion:*:warnings' format $'%{\e[38;05;238m%} No matches in %d%{\e[m%}'
+zstyle ':completion:*' select-prompt $'%{\e[38;05;249m%}%SSelection at %p%s%{\e[m%}'
+zstyle ':completion:*' completer _complete _ignored _approximate
+zstyle ':completion:*' list-packed true
+zstyle ':completion:*' list-dirs-first true
+zstyle ':completion:*' list-separator ''
+zstyle ':completion:*' group-order options arguments values directories files
+zstyle ':completion:*' menu select
+zstyle ':completion:*' group-name ''
+zstyle ':bracketed-paste-magic' active-widgets '.self-*'
+
+# ---------------------------------------
+# fzf-tab settings
+# ---------------------------------------
+zstyle ':fzf-tab:*' show-group none
+zstyle ':fzf-tab:*' prefix ''
+zstyle ':fzf-tab:*' switch-group ',' '.'
+zstyle ':fzf-tab:*' fzf-command fzf
+zstyle ':fzf-tab:*' use-fzf-default-opts yes
+zstyle ':fzf-tab:*' fzf-flags --height=75% --layout=reverse --border --inline-info --preview-window=right:40% --bind=alt-p:toggle-preview
+zstyle ':fzf-tab:complete:(cd|ls|eza|gls):*' fzf-preview '
+if [[ -d "$realpath" ]]; then
+  command eza --group-directories-first --icons -a --color=always -- "$realpath" 2>/dev/null || command gls -a --color=always -- "$realpath"
+elif [[ -f "$realpath" ]]; then
+  size=$(stat -f%z "$realpath" 2>/dev/null)
+  if [[ -n "$size" && "$size" -gt 512000 ]]; then
+    printf "File too large to preview\n\n"
+    printf "Name: %s\n" "$(basename -- "$realpath")"
+    printf "Size: %s KB\n" "$(( size / 1024 ))"
+    exit 0
+  fi
+  if command -v bat >/dev/null 2>&1; then
+    bat --style=numbers --color=always --line-range :300 -- "$realpath"
+  else
+    sed -n "1,200p" -- "$realpath"
+  fi
+else
+  command gls -a --color=always -- "$(dirname -- "$realpath")"
+fi
+'
+
+# ---------------------------------------
+# Native fzf setup
+# ---------------------------------------
+unset FZF_DEFAULT_OPTS
+unset FZF_CTRL_T_OPTS
+unset FZF_ALT_C_OPTS
+unset FZF_CTRL_R_OPTS
+unset FZF_DEFAULT_COMMAND
+unset FZF_CTRL_T_COMMAND
+unset FZF_ALT_C_COMMAND
+
+if command -v fd >/dev/null 2>&1; then
+  export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+else
+  export FZF_DEFAULT_COMMAND='find . -type f 2>/dev/null'
+  export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  export FZF_ALT_C_COMMAND='find . -type d 2>/dev/null'
+fi
+
+# FZF_DEFAULT_OPTS is theme-dependent — set by _term_theme_apply
+
+if command -v bat >/dev/null 2>&1; then
+  export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always --line-range :300 {} 2>/dev/null || sed -n \"1,200p\" {} 2>/dev/null' --preview-window=right,50%,border-left"
+else
+  export FZF_CTRL_T_OPTS="--preview 'sed -n \"1,200p\" {} 2>/dev/null' --preview-window=right,50%,border-left"
+fi
+
+if command -v eza >/dev/null 2>&1; then
+  export FZF_ALT_C_OPTS="--preview 'eza --all --long --group-directories-first --color=always {} 2>/dev/null' --preview-window=right,50%,border-left"
+elif command -v gls >/dev/null 2>&1; then
+  export FZF_ALT_C_OPTS="--preview 'gls -ah --color=always {} 2>/dev/null' --preview-window=right,50%,border-left"
+else
+  export FZF_ALT_C_OPTS="--preview 'ls -ah {} 2>/dev/null' --preview-window=right,50%,border-left"
+fi
+
+export FZF_CTRL_R_OPTS='--layout=reverse --height=75% --border --preview-window=hidden'
+
+# ---------------------------------------
+# Install Antidote (if missing)
+# ---------------------------------------
+if [[ ! -d "$ANTIDOTE_DIR" ]]; then
+  echo "⚡ Installing antidote..."
+  git clone --depth=1 https://github.com/mattmc3/antidote "$ANTIDOTE_DIR"
+fi
+source "$ANTIDOTE_DIR/antidote.zsh"
+
+# ---------------------------------------
+# Build plugin cache only when needed
+# Edit ~/.zsh/plugins.txt to add/remove plugins — cache rebuilds automatically.
+# ---------------------------------------
+() {
+  zmodload zsh/stat 2>/dev/null
+  local _plugins_file="$ZSH_DIR/plugins.txt"
+  local _pm_plugins=0 _pm_cache=0
+  zstat -A _pm_plugins +mtime "$_plugins_file" 2>/dev/null
+  zstat -A _pm_cache   +mtime "$CACHE_FILE"    2>/dev/null
+  if (( _pm_plugins > _pm_cache )) || [[ ! -f "$CACHE_FILE" ]]; then
+    echo "⚡ Rebuilding plugin cache..."
+    antidote bundle <"$_plugins_file" >"$CACHE_FILE"
+  fi
+}
+
+# ---------------------------------------
+# Load plugins
+# ---------------------------------------
+source "$CACHE_FILE"
+
+# use-omz (getantidote/use-omz) defers compinit to the first precmd via
+# ensure-compinit-during-precmd, and even with ZSH_DISABLE_COMPFIX=true only
+# runs `compinit -u` — which skips the interactive insecure-directory prompt
+# but still pays for the full compaudit fpath scan every startup (~11ms
+# measured) plus a `git rev-parse` dump-staleness check (~6ms measured).
+# Preempt it here with a direct `-C` call (trust the existing dump
+# unconditionally) and cancel use-omz's own deferred call so it doesn't also
+# run. Reaches into use-omz's internal function names, not a public API: if a
+# future antidote update renames them, this guard just no-ops and falls back
+# to use-omz's own (slower) default — see `compreload` alias for a manual
+# dump rebuild after adding completions for a new tool.
+if (( ${+functions[compinit_deferred]} )); then
+  autoload -Uz compinit
+  compinit -C
+  unfunction compinit_deferred 2>/dev/null
+  add-zsh-hook -d precmd ensure-compinit-during-precmd 2>/dev/null
+fi
+
+# Applies EZA_COLORS/LS_COLORS/LESS_TERMCAP/FZF/ZSH_HIGHLIGHT/BAT_THEME/prompt
+# colors for the cached theme, then re-detects in the background (see top of file).
+_term_theme_init
+
+# ---------------------------------------
+# carapace: universal completion for 1000+ CLIs not covered by zsh-completions.
+# Bridges fall back to native zsh/bash/fish completers (no regressions).
+# Init output is static per carapace version -> cache it (mirrors plugin cache).
+# Must run AFTER compinit (now run directly above, see the -C block).
+# ---------------------------------------
+if command -v carapace >/dev/null 2>&1; then
+  export CARAPACE_BRIDGES='zsh,fish,bash,inshellisense'
+  () {
+    local _cc_cache="${XDG_CACHE_HOME:-$HOME/.cache}/carapace-init.zsh"
+    local _cc_bin; _cc_bin="$(command -v carapace)"
+    local _m_bin=0 _m_cache=0
+    zstat -A _m_bin   +mtime "$_cc_bin"    2>/dev/null
+    zstat -A _m_cache +mtime "$_cc_cache"  2>/dev/null
+    if (( _m_bin > _m_cache )) || [[ ! -s "$_cc_cache" ]]; then
+      carapace _carapace zsh >| "$_cc_cache" 2>/dev/null
+    fi
+    source "$_cc_cache"
+  }
+fi
+
+# ---------------------------------------
+# Load native fzf shell integration
+# Do this after plugins
+# ---------------------------------------
+if [[ -n "$BREW_PREFIX" && -f "$BREW_PREFIX/opt/fzf/shell/completion.zsh" ]]; then
+  source "$BREW_PREFIX/opt/fzf/shell/completion.zsh"
+fi
+if [[ -n "$BREW_PREFIX" && -f "$BREW_PREFIX/opt/fzf/shell/key-bindings.zsh" ]]; then
+  source "$BREW_PREFIX/opt/fzf/shell/key-bindings.zsh"
+fi
+
+# ---------------------------------------
+# Hooks
+# ---------------------------------------
+autoload -Uz add-zsh-hook
+autoload -Uz edit-command-line
+zmodload zsh/datetime
+zmodload zsh/stat 2>/dev/null
+
+# ---------------------------------------
+# direnv (lazy safe load)
+# ---------------------------------------
+if command -v direnv >/dev/null 2>&1; then
+  _direnv_hook() {
+    eval "$(direnv hook zsh)"
+    unfunction _direnv_hook
+  }
+  add-zsh-hook precmd _direnv_hook
+fi
+
+# ---------------------------------------
+# Functions
+# ---------------------------------------
+[[ -f "$ZSH_DIR/fzfm.zsh" ]] && source "$ZSH_DIR/fzfm.zsh"
+
+fancy_ctrl_z() {
+  if [[ $#BUFFER -eq 0 ]]; then
+    local BUFFER="fg"
+    zle accept-line -w
+  else
+    zle push-input -w
+    zle clear-screen -w
+  fi
+}
+
+get_bundleid() {
+  osascript -e 'on run args
+	set output to {}
+	repeat with a in args
+		set end of output to id of app a
+	end
+	set text item delimiters to linefeed
+	output as text
+	end' "$1"
+}
+
+encrypt_256() {
+  openssl enc -aes-256-cbc -in "$1" -out "$2"
+}
+
+decrypt_256() {
+  openssl enc -aes-256-cbc -d -in "$1" -out "$2"
+}
+
+# Clipboard (macOS) — replaces copybuffer/copyfile/copypath plugins
+function clipcopy()   { cat "${1:-/dev/stdin}" | pbcopy; }
+function clippaste()  { pbpaste; }
+function copyfile()   { [[ -f "$1" ]] && pbcopy < "$1" && echo "${1:t} copied to clipboard."; }
+function copypath()   { print -rn -- "${${1:-$PWD}:a}" | pbcopy && echo "${${${1:-$PWD}:a}:t} copied to clipboard."; }
+function copybuffer() { print -rn -- "$BUFFER" | pbcopy; zle -M "Copied to clipboard" }
+zle -N copybuffer
+
+convert() {
+  case "$1" in
+    texttobase) print -n "$2" | base64 ;;
+    basetotext) print -n "$2" | base64 -d && echo ;;
+    texttohex) print -n "0x$(printf '%s' "$2" | xxd -p)" && echo ;;
+    hextotext) print -n "${2#0x}" | xxd -r -p && echo ;;
+    texttobin) print -n "$2" | perl -lape '$_=unpack"B*"' ;;
+    bintotext) print -n "$2" | perl -lape '$_=pack"B*",$_' ;;
+    hextobase) print -n "0x$(printf '%s' "${2#0x}" | xxd -r -p | base64)" && echo ;;
+    basetohex) print -n "0x$(printf '%s' "$2" | base64 -d | xxd -p)" && echo ;;
+    *)
+      print "Invalid conversion type. Available options: basetohex, hextobase, texttobase, basetotext, texttobin, bintotext, hextotext, texttohex"
+      ;;
+  esac
+}
+
+kext_perm_fix() {
+  sudo chown -R 0:0 "$1"
+  sudo chmod -R 0755 "$1"
+}
+
+_show_keybindings() {
+  local bindings
+  bindings="$(cat <<'EOF'
+--- SHELL -------------------------------------------------------
+Ctrl+L            Clear screen + scrollback (keeps current command)
+Ctrl+O            Copy current command buffer to clipboard
+Ctrl+Z            Toggle job to/from background
+Ctrl+X, Ctrl+E    Edit current command in vim  (:wq runs  :q! cancels)
+Ctrl+X, Ctrl+K    Show this keybindings cheatsheet
+Ctrl+X, Ctrl+R    Reload shell
+Alt+T             Toggle prompt theme (compact / full)
+Alt+B / Alt+F     Directory history: back / forward
+Up / Down         History substring search
+
+--- LINE EDITING ------------------------------------------------
+Ctrl+A / Ctrl+E   Beginning / end of line
+Ctrl+W            Delete word backward
+Ctrl+U            Kill entire line
+Ctrl+K            Kill from cursor to end of line
+Ctrl+Y            Yank (paste killed text)
+
+--- FZF ---------------------------------------------------------
+Ctrl+R            Fuzzy history search
+Ctrl+T            Fuzzy file picker (inserts path at cursor)
+Alt+C             Fuzzy cd into directory
+
+--- FZF-TAB (Tab completion) ------------------------------------
+Tab               Open fzf completion menu
+,  /  .           Switch completion groups
+Alt+P             Toggle file/dir preview
+
+--- FM (fzfm file manager) --------------------------------------
+Enter / Right     Open file or navigate into directory
+Left              Go up to parent directory
+Ctrl+D            cd to current directory and exit fm
+Ctrl+Y            Copy file path to clipboard
+Ctrl+O            Open file in macOS app
+Ctrl+P            Toggle preview panel
+Shift+Up/Down     Scroll preview
+EOF
+  )"
+  if command -v fzf >/dev/null 2>&1; then
+    printf '%s\n' "$bindings" | fzf --height=80% --layout=reverse --border --no-sort \
+      --header='Keybindings - type to filter' --prompt='> '
+  else
+    printf '%s\n' "$bindings" | less
+  fi
+  zle reset-prompt
+}
+
+typeset -ga _ZSH_CLAUDE_SESSION=()
+: ${ZSH_CLAUDE_SHELL_CONTEXT:=1}
+
+ccshell() {
+  case "$1" in
+    off|disable)
+      ZSH_CLAUDE_SHELL_DISABLED=1
+      echo "zsh-claude-code-shell: disabled"
+      ;;
+    on|enable)
+      ZSH_CLAUDE_SHELL_DISABLED=0
+      echo "zsh-claude-code-shell: enabled"
+      ;;
+    model)
+      if [[ -z "$2" ]]; then
+        echo "model: ${ZSH_CLAUDE_SHELL_MODEL:-default}"
+      else
+        ZSH_CLAUDE_SHELL_MODEL="$2"
+        echo "zsh-claude-code-shell: model → $2"
+      fi
+      ;;
+    context)
+      if [[ -z "$2" ]]; then
+        echo "context: $([[ ${ZSH_CLAUDE_SHELL_CONTEXT:-1} == 1 ]] && echo on || echo off)"
+      elif [[ "$2" == "on" || "$2" == "1" ]]; then
+        ZSH_CLAUDE_SHELL_CONTEXT=1
+        echo "zsh-claude-code-shell: context injection on"
+      else
+        ZSH_CLAUDE_SHELL_CONTEXT=0
+        echo "zsh-claude-code-shell: context injection off"
+      fi
+      ;;
+    history)
+      if (( ${#_ZSH_CLAUDE_SESSION[@]} == 0 )); then
+        echo "(no history in this session)"
+        return
+      fi
+      local i=1
+      for entry in "${_ZSH_CLAUDE_SESSION[@]}"; do
+        local q="${entry%%$'\x01'*}"
+        local c="${entry#*$'\x01'}"
+        echo "$i. # $q"
+        echo "   → $c"
+        (( i++ ))
+      done
+      ;;
+    status|"")
+      local st
+      st="$([[ ${ZSH_CLAUDE_SHELL_DISABLED:-0} == 1 ]] && echo disabled || echo enabled)"
+      echo "status:  $st"
+      echo "model:   ${ZSH_CLAUDE_SHELL_MODEL:-default}"
+      echo "context: $([[ ${ZSH_CLAUDE_SHELL_CONTEXT:-1} == 1 ]] && echo on || echo off)"
+      echo "session: ${#_ZSH_CLAUDE_SESSION[@]} entries"
+      ;;
+    help)
+      echo "Usage: ccshell <subcommand>"
+      echo ""
+      echo "Subcommands:"
+      echo "  status              Show full state (enabled, model, context, session depth)"
+      echo "  on | enable         Enable the '# <query>' → command widget"
+      echo "  off | disable       Disable the widget (Enter works normally)"
+      echo "  model               Show the current model"
+      echo "  model <id>          Set the model for command generation"
+      echo "  context             Show context injection state"
+      echo "  context on|off      Toggle cwd/git/prev-cmd context injection"
+      echo "  history             List generated commands from this shell session"
+      echo "  help                Show this help"
+      echo ""
+      echo "Available models:"
+      echo "  claude-haiku-4-5-20251001   Fastest, lowest cost"
+      echo "  claude-sonnet-4-6           Balanced (default)"
+      echo "  claude-opus-4-8             Most capable"
+      echo "  claude-fable-5              Fable 5"
+      echo ""
+      echo "Context injection (on by default):"
+      echo "  Prepends [cwd:X, git:Y, prev:\"Z\"] to each query so Claude has"
+      echo "  directory, branch, and last-generated-command context."
+      echo "  Enables follow-ups like '# do it recursively' to work correctly."
+      echo ""
+      echo "Examples:"
+      echo "  ccshell model claude-haiku-4-5-20251001"
+      echo "  ccshell off"
+      echo "  ccshell context off"
+      echo "  ccshell history"
+      ;;
+    *)
+      echo "Unknown subcommand: $1"
+      echo "Run 'ccshell help' for usage."
+      ;;
+  esac
+}
+
+_zsh_claude_context_wrap() {
+  local orig_buf="$BUFFER"
+  local is_query=0
+  [[ "$orig_buf" =~ ^'# ' ]] && is_query=1
+
+  if (( is_query )) && [[ "${ZSH_CLAUDE_SHELL_CONTEXT:-1}" == "1" ]] && [[ "${ZSH_CLAUDE_SHELL_DISABLED:-0}" != "1" ]]; then
+    local query="${orig_buf:2}"
+    local ctx_parts=("cwd:${PWD:t}")
+    local branch
+    branch=$(git symbolic-ref --short HEAD 2>/dev/null) && ctx_parts+=("git:$branch")
+    if (( ${#_ZSH_CLAUDE_SESSION[@]} > 0 )); then
+      local prev_cmd="${_ZSH_CLAUDE_SESSION[-1]#*$'\x01'}"
+      ctx_parts+=("prev:\"$prev_cmd\"")
+    fi
+    BUFFER="# [${(j:, :)ctx_parts}] $query"
+  fi
+
+  _zsh_claude_accept_line
+
+  if (( is_query )) && [[ "${ZSH_CLAUDE_SHELL_DISABLED:-0}" != "1" ]] && [[ -n "$BUFFER" ]] && [[ ! "$BUFFER" =~ ^'# ' ]]; then
+    _ZSH_CLAUDE_SESSION+=("${orig_buf:2}"$'\x01'"$BUFFER")
+    (( ${#_ZSH_CLAUDE_SESSION[@]} > 5 )) && _ZSH_CLAUDE_SESSION=("${_ZSH_CLAUDE_SESSION[@]: -5}")
+  fi
+}
+zle -N _zsh_claude_context_wrap
+zle -N accept-line _zsh_claude_context_wrap
+
+# ---------------------------------------
+# Key bindings
+# ---------------------------------------
+zle -N fancy_ctrl_z
+bindkey '^Z' fancy_ctrl_z
+zle -N edit-command-line
+bindkey '^X^E' edit-command-line
+_clear_screen_full() {
+  printf '\033[2J\033[3J\033[H'
+  zle reset-prompt
+}
+zle -N _clear_screen_full
+bindkey '^L' _clear_screen_full
+zle -N _show_keybindings
+bindkey '^X^K' _show_keybindings
+_reload_shell() { BUFFER="exec zsh"; zle accept-line }
+zle -N _reload_shell
+bindkey '^X^R' _reload_shell
+bindkey '^O' copybuffer
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+
+# Dircycle widget bindings
+bindkey '^[b' insert-cycledleft
+bindkey '^[f' insert-cycledright
+
+# Leave disabled when using fzf-tab
+# bindkey '^I' menu-complete
+# bindkey "$terminfo[kcbt]" reverse-menu-complete
+
+# Prompt theme toggle — Alt+T
+# NOTE: Previously Ctrl-H; changed because vim-tmux-navigator binds C-h at the
+# tmux root level, which intercepts the byte before zsh ever sees it.
+_prompt_toggle_theme() {
+  if [[ "$_PROMPT_THEME" == "compact" ]]; then
+    _PROMPT_THEME="full"
+    print -r -- "full" >| "$CACHE_DIR/.prompt_theme"
+    _prompt_build_rprompt
+    _prompt_build_full $_prompt_last_exit
+  else
+    _PROMPT_THEME="compact"
+    print -r -- "compact" >| "$CACHE_DIR/.prompt_theme"
+    _prompt_build_rprompt
+    _prompt_build_prompt $_prompt_last_exit
+  fi
+  zle reset-prompt
+}
+zle -N _prompt_toggle_theme
+bindkey '^[t' _prompt_toggle_theme
+
+# Force a synchronous re-detect of Terminal.app's light/dark theme — Alt+Shift+T
+zle -N theme-refresh
+bindkey '^[T' theme-refresh
+
+# ---------------------------------------
+# Prompt — compact + full themes (toggle: Alt+T)
+# ---------------------------------------
+
+# Palette (truecolor) — theme-dependent, set by _term_theme_apply (top of file)
+
+# Arrow glyph
+typeset -g _PG_ARROW='❯'
+
+# Path truncation
+typeset -g _PROMPT_PATH_KEEP=3
+
+typeset -g _prompt_cmd_start=""
+typeset -g _prompt_elapsed=""
+typeset -g _prompt_last_exit=0
+typeset -g _prompt_first_run=1
+
+# Compact shared state — populated by _prompt_build_rprompt,
+# read by _prompt_build_prompt for branch left of ❯.
+typeset -g _prompt_ahead=0
+typeset -g _prompt_behind=0
+typeset -g _prompt_stash=0
+typeset -g _prompt_branch=""
+typeset -g _prompt_branch_color=""
+typeset -g _prompt_unstaged=0
+typeset -g _prompt_staged=0
+typeset -g _prompt_untracked=0
+typeset -g _PROMPT_THEME="compact"
+[[ -f "$CACHE_DIR/.prompt_theme" ]] && _PROMPT_THEME=$(<"$CACHE_DIR/.prompt_theme")
+typeset -g _pvc_node="" _pvc_node_key=""
+typeset -g _pvc_py=""   _pvc_py_key=""
+typeset -g _pvc_ruby="" _pvc_ruby_key=""
+typeset -g _pvc_pkg=""  _pvc_pkg_key=""
+typeset -g _pbc_val="" _pbc_ts=0
+typeset -g _psc_val=1  _psc_ts=0
+
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
+# ── Helpers ──────────────────────────────────────────────────────────────
+
+_prompt_battery() {
+  command -v pmset &>/dev/null || return
+  if (( EPOCHREALTIME - _pbc_ts > 60 )); then
+    local out=$(pmset -g batt 2>/dev/null)
+    _pbc_ts=$EPOCHREALTIME
+    _pbc_val=""
+    if [[ "$out" == *"discharging"* ]]; then
+      local pct=${${out#*$'\t'}%%%*}; pct=${pct##* }
+      [[ "$pct" =~ ^[0-9]+$ ]] && (( pct < 20 )) && _pbc_val="$pct"
+    fi
+  fi
+  [[ -n "$_pbc_val" ]] && print -n "$_pbc_val"
+}
+
+_prompt_sudo_active() {
+  if (( EPOCHREALTIME - _psc_ts > 30 )); then
+    sudo -n true 2>/dev/null; _psc_val=$?; _psc_ts=$EPOCHREALTIME
+  fi
+  return $_psc_val
+}
+
+# ── RPROMPT: language pills + elapsed ────────────────────────────────────
+
+_prompt_build_rprompt() {
+  local r=""
+  local IC_PY=$'\ue606'
+  local IC_NODE=$'\ued0d'
+  local IC_RUBY=$'\ue791'
+
+  # Reset shared state
+  _prompt_ahead=0
+  _prompt_behind=0
+  _prompt_stash=0
+  _prompt_branch=""
+  _prompt_branch_color=""
+  _prompt_unstaged=0
+  _prompt_staged=0
+  _prompt_untracked=0
+
+  # Python pill — cached by env key
+  if [[ -f requirements.txt || -f pyproject.toml || -f setup.py || -f Pipfile || -n "$VIRTUAL_ENV" ]] && command -v python3 &>/dev/null; then
+    local py_key="${CONDA_DEFAULT_ENV:-}:${VIRTUAL_ENV:-}:${PYENV_VERSION:-}:${PATH%%:*}"
+    [[ "$py_key" != "$_pvc_py_key" ]] && { _pvc_py=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null); _pvc_py_key="$py_key" }
+    local pv="$_pvc_py"
+    if [[ -n "$pv" ]]; then
+      r+="%{"$'\e[48;2;42;58;42m\e[38;2;152;200;127m'"%} ${IC_PY} ${pv} %{"$'\e[49m\e[0m'"%}"
+    fi
+  fi
+
+  # Node pill — cached by env key
+  if [[ -f package.json || -f .nvmrc || -f .node-version ]] && command -v node &>/dev/null; then
+    local node_key="${NVM_BIN:-}:${NODENV_ROOT:-}:${PATH%%:*}"
+    [[ "$node_key" != "$_pvc_node_key" ]] && { _pvc_node=$(node -v 2>/dev/null); _pvc_node_key="$node_key" }
+    local nv="$_pvc_node"
+    if [[ -n "$nv" ]]; then
+      r+="%{"$'\e[48;2;42;52;69m\e[38;2;154;184;212m'"%} ${IC_NODE} ${nv#v} %{"$'\e[49m\e[0m'"%}"
+    fi
+  fi
+
+  # Ruby pill — cached by env key
+  if [[ -f Gemfile || -f .ruby-version ]] && command -v ruby &>/dev/null; then
+    local ruby_key="${RBENV_VERSION:-}:${GEM_HOME:-}:${PATH%%:*}"
+    [[ "$ruby_key" != "$_pvc_ruby_key" ]] && { _pvc_ruby=$(ruby -e 'print RUBY_VERSION' 2>/dev/null); _pvc_ruby_key="$ruby_key" }
+    local rv="$_pvc_ruby"
+    if [[ -n "$rv" ]]; then
+      r+="%{"$'\e[48;2;58;38;40m\e[38;2;236;128;137m'"%} ${IC_RUBY} ${rv} %{"$'\e[49m\e[0m'"%}"
+    fi
+  fi
+
+  # Battery
+  local batt=$(_prompt_battery)
+  if [[ -n "$batt" ]]; then
+    r+="%{"$'\e[48;2;58;38;40m\e[38;2;236;128;137m'"%} ⚡${batt}%% %{"$'\e[49m\e[0m'"%}"
+  fi
+
+  # Elapsed time pill
+  if [[ -n "$_prompt_elapsed" ]]; then
+    r+="%{"$'\e[48;2;42;42;42m\e[38;2;180;178;169m'"%} ~${_prompt_elapsed}s %{"$'\e[49m\e[0m'"%}"
+  fi
+
+  # ── Populate globals for PROMPT left side — single git call + pure zsh ──
+  local git_out
+  git_out=$(git status --porcelain=v2 --branch 2>/dev/null) || git_out=""
+  if [[ -n "$git_out" ]]; then
+    local git_lines=("${(f)git_out}")
+
+    local branch="${${git_lines[(r)# branch.head *]}#'# branch.head '}"
+    [[ "$branch" == "(detached)" ]] && branch="HEAD"
+
+    local ab_line="${git_lines[(r)# branch.ab *]}"
+    if [[ -n "$ab_line" ]]; then
+      _prompt_ahead="${${ab_line#*+}%% *}"
+      _prompt_behind="${ab_line##*-}"
+    fi
+
+    local staged="" unstaged="" untracked=""
+    local _sa=("${(M)git_lines[@]:#1 [!.]*}")
+    local _ua=("${(M)git_lines[@]:#1 ?[!.]*}")
+    local _ta=("${(M)git_lines[@]:#\? *}")
+    (( ${#_sa} )) && { staged=1;   _prompt_staged=1 }
+    (( ${#_ua} )) && { unstaged=1; _prompt_unstaged=1 }
+    (( ${#_ta} )) && { untracked=1; _prompt_untracked=1 }
+
+    if [[ -n "$branch" ]]; then
+      # Pure zsh .git walk — no fork
+      local git_dir="" _d="$PWD"
+      while [[ "$_d" != "/" ]]; do
+        if [[ -f "$_d/.git" ]]; then
+          local _gc=$(<"$_d/.git")
+          git_dir="${${_gc##gitdir: }%%$'\n'*}"
+          [[ "${git_dir:0:1}" != "/" ]] && git_dir="$_d/$git_dir"
+          break
+        elif [[ -d "$_d/.git" ]]; then
+          git_dir="$_d/.git"; break
+        fi
+        _d="${_d:h}"
+      done
+
+      local action=""
+      if [[ -n "$git_dir" ]]; then
+        if   [[ -d "$git_dir/rebase-merge" || -d "$git_dir/rebase-apply" ]]; then action="rebase"
+        elif [[ -f "$git_dir/MERGE_HEAD" ]];       then action="merge"
+        elif [[ -f "$git_dir/CHERRY_PICK_HEAD" ]]; then action="cherry-pick"
+        fi
+        [[ -f "$git_dir/refs/stash" ]] && _prompt_stash=$(git stash list 2>/dev/null | wc -l)
+        _prompt_stash="${_prompt_stash// /}"
+      fi
+
+      if [[ -n "$action" ]]; then
+        _prompt_branch="${branch} (${action})"
+        _prompt_branch_color="${_PC_GIT_ACTION}"
+      else
+        _prompt_branch="$branch"
+        if   [[ -n "$unstaged" && -n "$staged" ]]; then _prompt_branch_color="${_PC_GIT_BRANCH_MIXED}"
+        elif [[ -n "$unstaged" ]]; then _prompt_branch_color="${_PC_GIT_DIRTY}"
+        elif [[ -n "$staged"   ]]; then _prompt_branch_color="${_PC_GIT_STAGED}"
+        elif [[ -n "$untracked" ]]; then _prompt_branch_color="${_PC_GIT_BRANCH_UNTRACK}"
+        else _prompt_branch_color="${_PC_GIT_CLEAN}"
+        fi
+      fi
+    fi
+  fi
+
+  RPROMPT="$r"
+}
+
+# ── PROMPT: folder · branch · ↑↓ · stash · sudo · ❯ ─────────────────────
+
+_prompt_build_prompt() {
+  local exit_code=$1
+  local job_count=${#jobstates}
+  local p=""
+
+  # Folder name
+  local folder="${PWD:t}"
+  [[ "$PWD" == "$HOME" ]] && folder="~"
+  [[ "$PWD" == "/" ]] && folder="/"
+  p+="%{${_PC_FOLDER}%}${folder}%{${_PC_RST}%} "
+
+  # SSH context
+  if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
+    local ssh_port="${SSH_CLIENT##* }"
+    p+="%{${_PC_SSH_USER}%}${USER}%{${_PC_SSH}%}@${HOST%%.*}:${ssh_port}%{${_PC_RST}%} "
+  fi
+
+  # Branch
+  if [[ -n "$_prompt_branch" ]]; then
+    p+="%{${_PC_DIM}%}on%{${_PC_RST}%} "
+    p+="%{${_prompt_branch_color}%}${_prompt_branch}%{${_PC_RST}%} "
+  fi
+
+  # Ahead/behind
+  if (( _prompt_ahead > 0 )); then
+    p+="%{${_PC_GIT_AHEAD}%}↑%{${_PC_RST}%}"
+  fi
+  if (( _prompt_behind > 0 )); then
+    p+="%{${_PC_GIT_BEHIND}%}↓%{${_PC_RST}%}"
+  fi
+  if (( _prompt_ahead > 0 || _prompt_behind > 0 )); then
+    p+=" "
+  fi
+
+  # Stash count
+  if (( _prompt_stash > 0 )); then
+    p+="%{${_PC_GIT_STASH}%}${_prompt_stash}%{${_PC_RST}%} "
+  fi
+
+  # Exit code
+  if (( exit_code != 0 )); then
+    p+="%{${_PC_EXIT}%}${exit_code}%{${_PC_RST}%} "
+  fi
+
+  # Jobs
+  if (( job_count > 0 )); then
+    p+="%{${_PC_BUSY}%}${job_count}&%{${_PC_RST}%} "
+  fi
+
+  # Sudo — # before arrow
+  if _prompt_sudo_active; then
+    p+="%{${_PC_SUDO}%}#%{${_PC_RST}%}"
+  fi
+
+  # Arrow
+  if (( exit_code != 0 )); then
+    p+="%{${_PC_ERR}%}${_PG_ARROW}%{${_PC_RST}%} "
+  elif (( job_count > 0 )); then
+    p+="%{${_PC_BUSY}%}${_PG_ARROW}%{${_PC_RST}%} "
+  else
+    p+="%{${_PC_OK}%}${_PG_ARROW}%{${_PC_RST}%} "
+  fi
+
+  PROMPT="$p"
+}
+
+# ── PROMPT: full theme — info line + blank cursor line ───────────────────
+# Palette shared by _prompt_build_full and _prompt_build_transient_full
+# (previously duplicated as identical locals in both functions).
+typeset -g C_FOLDER=$'\e[38;2;0;215;135m'      # bright teal-green
+typeset -g C_PKG=$'\e[38;2;242;153;38m'         # orange
+typeset -g C_NODE=$'\e[38;2;154;184;212m'       # light blue  (Node)
+typeset -g C_PY=$'\e[38;2;152;200;127m'         # light green (Python)
+typeset -g C_RUBY=$'\e[38;2;236;128;137m'       # pink-red    (Ruby)
+typeset -g C_AWS=$'\e[38;2;0;175;255m'          # cyan
+typeset -g C_DIM=$'\e[38;2;95;94;90m'
+typeset -g C_RST=$'\e[0m'
+typeset -g C_SSH=$'\e[38;2;0;175;175m'
+typeset -g C_SSH_USER=$'\e[38;2;0;140;140m'
+
+_prompt_build_full() {
+  local exit_code=$1
+  local p=""
+  local IC_BRANCH=$''
+  local IC_NODE=$''
+  local IC_PY=$''
+  local IC_RUBY=$''
+  local IC_PKG=$''          # nf-fa-cube U+F1B2
+
+  # Folder
+  local folder="${PWD:t}"
+  [[ "$PWD" == "$HOME" ]] && folder="~"
+  [[ "$PWD" == "/" ]] && folder="/"
+  if _prompt_sudo_active; then
+    p+="%{${_PC_SUDO}%}sudo%{${C_DIM}%} at%{${C_RST}%} "
+  fi
+  p+="%{${C_FOLDER}%}${folder}%{${C_RST}%}"
+
+  # SSH context
+  if [[ -n "$SSH_CLIENT$SSH_TTY" ]]; then
+    local ssh_port="${SSH_CLIENT##* }"
+    p+=" %{${C_DIM}%}in%{${C_RST}%} %{${C_SSH_USER}%}${USER}%{${C_SSH}%}@${HOST%%.*}:${ssh_port}%{${C_RST}%}"
+  fi
+
+  # Branch — fixed orange; git state shown via [!+?] flags
+  if [[ -n "$_prompt_branch" ]]; then
+    p+=" %{${C_DIM}%}on%{${C_RST}%} %{${C_PKG}%}${IC_BRANCH} ${_prompt_branch}%{${C_RST}%}"
+    local git_inner="" git_flags=""
+    (( _prompt_unstaged ))  && git_flags+="!"
+    (( _prompt_staged ))    && git_flags+="+"
+    (( _prompt_untracked )) && git_flags+="?"
+    [[ -n "$git_flags" ]] && git_inner+="%{${_PC_GIT_ACTION}%}${git_flags}%{${C_RST}%}"
+    (( _prompt_ahead ))  && git_inner+="${git_inner:+ }%{${_PC_GIT_AHEAD}%}↑${_prompt_ahead}%{${C_RST}%}"
+    (( _prompt_behind )) && git_inner+="${git_inner:+ }%{${_PC_GIT_BEHIND}%}↓${_prompt_behind}%{${C_RST}%}"
+    (( _prompt_stash ))  && git_inner+="${git_inner:+ }%{${_PC_GIT_STASH}%}≡${_prompt_stash}%{${C_RST}%}"
+    [[ -n "$git_inner" ]] && p+=" %{${C_DIM}%}[%{${C_RST}%}${git_inner}%{${C_DIM}%}]%{${C_RST}%}"
+  fi
+
+  # Package version — awk + mtime cache (no cold node start)
+  if [[ -f package.json ]]; then
+    local _pm=0; zstat -A _pm +mtime package.json 2>/dev/null
+    local pkg_key="${PWD}:${_pm}"
+    [[ "$pkg_key" != "$_pvc_pkg_key" ]] && { _pvc_pkg=$(awk -F'"' '/"version"/{print $4;exit}' package.json 2>/dev/null); _pvc_pkg_key="$pkg_key" }
+    local pkg_ver="$_pvc_pkg"
+    if [[ -n "$pkg_ver" ]]; then
+      p+=" %{${C_DIM}%}is%{${C_RST}%} %{${C_PKG}%}${IC_PKG} v${pkg_ver}%{${C_RST}%}"
+    fi
+  fi
+
+  # Language runtimes — cached, joined with |
+  local via_parts=()
+
+  if [[ -f package.json || -f .nvmrc || -f .node-version ]] && command -v node &>/dev/null; then
+    local node_key="${NVM_BIN:-}:${NODENV_ROOT:-}:${PATH%%:*}"
+    [[ "$node_key" != "$_pvc_node_key" ]] && { _pvc_node=$(node -v 2>/dev/null); _pvc_node_key="$node_key" }
+    local nv="$_pvc_node"
+    [[ -n "$nv" ]] && via_parts+=("%{${C_NODE}%}${IC_NODE} ${nv#v}%{${C_RST}%}")
+  fi
+
+  if [[ -f requirements.txt || -f pyproject.toml || -f setup.py || -f Pipfile || -n "$CONDA_DEFAULT_ENV" || -n "$VIRTUAL_ENV" ]] && command -v python3 &>/dev/null; then
+    local py_key="${CONDA_DEFAULT_ENV:-}:${VIRTUAL_ENV:-}:${PYENV_VERSION:-}:${PATH%%:*}"
+    [[ "$py_key" != "$_pvc_py_key" ]] && { _pvc_py=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null); _pvc_py_key="$py_key" }
+    local pv="$_pvc_py"
+    if [[ -n "$pv" ]]; then
+      local py_str="${pv}"
+      if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
+        py_str+=":${CONDA_DEFAULT_ENV}"
+      elif [[ -n "$VIRTUAL_ENV" ]]; then
+        py_str+=":${VIRTUAL_ENV:t}"
+      fi
+      via_parts+=("%{${C_PY}%}${IC_PY} ${py_str}%{${C_RST}%}")
+    fi
+  fi
+
+  if [[ -f Gemfile || -f .ruby-version ]] && command -v ruby &>/dev/null; then
+    local ruby_key="${RBENV_VERSION:-}:${GEM_HOME:-}:${PATH%%:*}"
+    [[ "$ruby_key" != "$_pvc_ruby_key" ]] && { _pvc_ruby=$(ruby -e 'print RUBY_VERSION' 2>/dev/null); _pvc_ruby_key="$ruby_key" }
+    local rv="$_pvc_ruby"
+    [[ -n "$rv" ]] && via_parts+=("%{${C_RUBY}%}${IC_RUBY} ${rv}%{${C_RST}%}")
+  fi
+
+  if (( ${#via_parts[@]} > 0 )); then
+    p+=" %{${C_DIM}%}via [%{${C_RST}%}"
+    local i
+    for (( i=1; i<=${#via_parts[@]}; i++ )); do
+      (( i > 1 )) && p+=" %{${C_DIM}%}|%{${C_RST}%}"
+      p+=" ${via_parts[i]}"
+    done
+    p+=" %{${C_DIM}%}]%{${C_RST}%}"
+  fi
+
+  # AWS context
+  if [[ -n "$AWS_PROFILE" || -n "$AWS_DEFAULT_REGION" ]]; then
+    local aws_ctx="${AWS_PROFILE:-?}:<${AWS_DEFAULT_REGION:-?}>"
+    p+=" %{${C_DIM}%}on%{${C_RST}%} %{${C_AWS}%}${aws_ctx}%{${C_RST}%}"
+  fi
+
+  # Line 2: background jobs + arrow (cursor line)
+  local line2=""
+  local job_count=${#jobstates}
+  (( job_count > 0 )) && line2+="%{${_PC_BUSY}%}${job_count}&%{${C_RST}%} "
+  if (( exit_code != 0 )); then
+
+    line2+="%{${_PC_ERR}%}→%{${C_RST}%} "
+  else
+    line2+="%{${C_AWS}%}→%{${C_RST}%} "
+  fi
+
+  PROMPT="${p}
+${line2}"
+
+  # RPROMPT: time + optional elapsed on cursor line right
+  local r="%{${C_DIM}%}%D{%H:%M}%{${C_RST}%}"
+  [[ -n "$_prompt_elapsed" ]] && r+="%{${C_DIM}%}(~${_prompt_elapsed}s)%{${C_RST}%}"
+  RPROMPT="$r"
+}
+
+# ── Hooks ─────────────────────────────────────────────────────────────────
+
+_prompt_precmd() {
+  _prompt_last_exit=$?
+
+  local cmd_ran=0
+  [[ -n "$_prompt_cmd_start" ]] && cmd_ran=1
+
+  if (( _prompt_first_run )); then
+    _prompt_first_run=0
+  elif (( cmd_ran )); then
+    print
+  fi
+
+  _prompt_elapsed=""
+  if (( cmd_ran )); then
+    local elapsed=$(( EPOCHREALTIME - _prompt_cmd_start ))
+    if (( elapsed >= 2 )); then
+      _prompt_elapsed="$(printf '%.2f' $elapsed)"
+    fi
+    _prompt_cmd_start=""
+  fi
+
+  _prompt_build_rprompt
+  if [[ "$_PROMPT_THEME" == "full" ]]; then
+    _prompt_build_full $_prompt_last_exit
+  else
+    _prompt_build_prompt $_prompt_last_exit
+  fi
+}
+
+_prompt_preexec() {
+  _prompt_cmd_start=$EPOCHREALTIME
+}
+
+TRAPCHLD() {
+  if [[ -z "$_prompt_cmd_start" ]]; then
+    _prompt_build_rprompt
+    if [[ "$_PROMPT_THEME" == "full" ]]; then
+      _prompt_build_full $_prompt_last_exit
+    else
+      _prompt_build_prompt $_prompt_last_exit
+    fi
+    zle reset-prompt 2>/dev/null || true
+  fi
+}
+
+add-zsh-hook precmd _prompt_precmd
+add-zsh-hook preexec _prompt_preexec
+
+# ── Transient prompt: collapse to a minimal form once a line is accepted ────
+# Each theme collapses to its own shape — compact stays one line, full keeps
+# its two-line silhouette (just stripped of flags/pills/clock) so the zle
+# redraw never has to change the prompt's line count.
+
+_prompt_build_transient_compact() {
+  local exit_code=$1
+  local folder="${PWD:t}"
+  [[ "$PWD" == "$HOME" ]] && folder="~"
+  [[ "$PWD" == "/" ]] && folder="/"
+
+  local p="%{${_PC_FOLDER}%}${folder}%{${_PC_RST}%} "
+
+  if [[ -n "$_prompt_branch" ]]; then
+    p+="%{${_PC_DIM}%}on%{${_PC_RST}%} %{${_prompt_branch_color}%}${_prompt_branch}%{${_PC_RST}%} "
+  fi
+
+  if (( exit_code != 0 )); then
+    p+="%{${_PC_ERR}%}${_PG_ARROW}%{${_PC_RST}%} "
+  else
+    p+="%{${_PC_OK}%}${_PG_ARROW}%{${_PC_RST}%} "
+  fi
+
+  PROMPT="$p"
+  RPROMPT=""
+}
+
+_prompt_build_transient_full() {
+  local exit_code=$1
+  local IC_BRANCH=$''
+
+  local folder="${PWD:t}"
+  [[ "$PWD" == "$HOME" ]] && folder="~"
+  [[ "$PWD" == "/" ]] && folder="/"
+
+  local p="%{${C_FOLDER}%}${folder}%{${C_RST}%}"
+  if [[ -n "$_prompt_branch" ]]; then
+    p+=" %{${C_DIM}%}on%{${C_RST}%} %{${C_PKG}%}${IC_BRANCH} ${_prompt_branch}%{${C_RST}%}"
+  fi
+
+  local line2
+  if (( exit_code != 0 )); then
+    line2="%{${_PC_ERR}%}→%{${C_RST}%} "
+  else
+    line2="%{${C_AWS}%}→%{${C_RST}%} "
+  fi
+
+  PROMPT="${p}
+${line2}"
+  RPROMPT=""
+}
+
+_prompt_zle_line_finish() {
+  if [[ "$_PROMPT_THEME" == "full" ]]; then
+    _prompt_build_transient_full $_prompt_last_exit
+  else
+    _prompt_build_transient_compact $_prompt_last_exit
+  fi
+  zle .reset-prompt
+}
+
+autoload -Uz add-zle-hook-widget
+add-zle-hook-widget line-finish _prompt_zle_line_finish
+
+# ---------------------------------------
+# Zoxide
+# Init output is static per zoxide version -> cache it (mirrors carapace).
+# ---------------------------------------
+if command -v zoxide >/dev/null 2>&1; then
+  () {
+    local _zx_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zoxide-init.zsh"
+    local _zx_bin; _zx_bin="$(command -v zoxide)"
+    local _m_bin=0 _m_cache=0
+    zstat -A _m_bin   +mtime "$_zx_bin"    2>/dev/null
+    zstat -A _m_cache +mtime "$_zx_cache"  2>/dev/null
+    if (( _m_bin > _m_cache )) || [[ ! -s "$_zx_cache" ]]; then
+      zoxide init zsh >| "$_zx_cache" 2>/dev/null
+    fi
+    source "$_zx_cache"
+  }
+fi
+
+# ---------------------------------------
+# Aliases
+# ---------------------------------------
+if command -v eza >/dev/null 2>&1; then
+  alias ll='eza -l --group-directories-first --icons=auto --git --header --time-style=relative'
+  alias la='eza -lA --group-directories-first --icons=auto --git --header --time-style=relative'
+  alias lt='eza --tree --level=2 -l --icons=auto --git --time-style="+%d %b %Y %H:%M"'
+  alias lt3='eza --tree --level=3 -l --icons=auto --git --time-style="+%d %b %Y %H:%M"'
+  alias lta='eza --tree --level=2 -l --icons=auto --git --time-style="+%d %b %Y %H:%M" -a'
+  alias ld='eza -lD --group-directories-first --icons=auto --header --time-style=relative'
+  alias lss='eza -l --group-directories-first --icons=auto --sort=size --reverse --header --time-style=relative'
+  alias lsm='eza -l --group-directories-first --icons=auto --sort=modified --reverse --header --time-style=relative'
+elif command -v gls >/dev/null 2>&1; then
+  alias ll='gls -lh --color=auto --group-directories-first'
+  alias la='gls -lAh --color=auto --group-directories-first'
+fi
+
+# `ls` renders a Nushell-style bordered table (falls back to eza/gls if nu is unavailable).
+# `unalias` clears oh-my-zsh's lib/directories.zsh defaults / any earlier alias so the
+# function definition doesn't collide with an existing alias of the same name.
+unalias ls 2>/dev/null
+if command -v nu >/dev/null 2>&1; then
+  function ls {
+    # oh-my-zsh's default `l='ls -lah'` forwards flags like -lah here; ignore flag-style
+    # args (nu's `ls` doesn't take them) but still honor a trailing path argument.
+    local target="."
+    (( $# > 0 )) && [[ "${@[-1]}" != -* ]] && target="${@[-1]}"
+    nu -c "cd '$target'; ls | table"
+  }
+elif command -v eza >/dev/null 2>&1; then
+  alias ls='eza --group-directories-first --icons=auto'
+elif command -v gls >/dev/null 2>&1; then
+  alias ls='gls --color=auto --group-directories-first'
+fi
+
+if command -v bat >/dev/null 2>&1; then
+  alias rcat='/bin/cat'
+  alias cat='bat'
+fi
+
+alias python='python3'
+alias pip='pip3'
+alias bi='brew install'
+alias br='brew remove'
+alias bs='brew search'
+alias bif='brew info'
+alias bup='brew upgrade && brew cu -ay && brew autoremove && brew cleanup && brew doctor'
+alias bclp='brew cleanup --prune=all'
+alias bb="brew bundle --global"
+alias bl='brew list'
+alias bo='brew outdated'
+alias bu='brew upgrade'
+alias blv='brew leaves'
+alias bsl='brew services list'
+alias bdp='brew bundle dump --global --force && bash "$(dirname "$(readlink "$HOME/Brewfile")")/generate_core.sh"'
+alias bd='brew doctor'
+alias gcl='git clone'
+alias gs="git status"
+alias pathlist='echo $PATH | tr ":" "\n"'
+alias clearaslogs='noglob sudo rm -rf /private/var/log/asl/*'
+alias flushdnscache='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
+alias zshreload='exec zsh'
+alias codesig='codesign -f -s - --deep'
+alias unblock='sudo xattr -r -d com.apple.quarantine'
+alias lockfile='chflags uchg'
+alias unlockfile='chflags nouchg'
+alias compfix='compaudit | xargs chmod g-w'
+alias xdropen='open ${HOME}/Library/Developer/Xcode/DerivedData'
+alias getkerneldump='log show --debug --last boot --debug --predicate "process == \"kernel\""'
+alias termbin='nc termbin.com 9999'
+alias nmap='sudo grc nmap'
+alias atdreload='rm -f ~/.zsh/cache/plugins.zsh && exec zsh'
+alias compreload='rm -f ~/.zcompdump && exec zsh'
+alias top='btop || top'
+alias cc='claude'
+alias ccr='claude --dangerously-skip-permissions -r'
+alias ccc='claude --dangerously-skip-permissions -c'
+alias ccn='claude --dangerously-skip-permissions -n'
+alias ccp='claude --dangerously-skip-permissions -p'
+alias ccd='claude --dangerously-skip-permissions'
+
+alias t='tmux'
+alias ta='tmux attach -t'
+alias tat='tmux attach || tmux new'
+alias tn='tmux new -s'
+alias tl='tmux ls'
+alias tk='tmux kill-session -t'
+
+# ---------------------------------------
+# Profiling output
+# Uncomment while tuning startup
+# ---------------------------------------
 # zprof
+# bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-eval "$(direnv hook zsh)"
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
 
-# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+# ---------------------------------------
+# zsh-patina — Rust-daemon syntax highlighter, replaces zsh-syntax-highlighting.
+# Must stay last: compinit/bindkey (both already run above) need to have
+# initialized ZLE before this activates, per the plugin's own troubleshooting
+# docs. Theme is set in ~/.config/zsh-patina/config.toml.
+# ---------------------------------------
+if command -v zsh-patina >/dev/null 2>&1; then
+  eval "$(zsh-patina activate)"
+fi
 
-# Fig post block. Keep at the bottom of this file.
-# [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && source "$HOME/.fig/shell/zshrc.post.zsh"
+
+
