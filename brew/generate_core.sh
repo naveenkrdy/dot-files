@@ -12,7 +12,7 @@
 #           in core_include.txt
 #   mas / vscode - dropped
 #
-# Runs automatically from the bd alias (after every dump) and from
+# Runs automatically from the bdp alias (after every dump) and from
 # brew/_setup.sh when the work profile installs.
 
 set -euo pipefail

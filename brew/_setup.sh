@@ -18,22 +18,16 @@ fi
 
 brew analytics off || true
 
-# Ensure bundle tap
-if ! brew tap | grep -q "homebrew/bundle"; then
-  brew tap homebrew/bundle
-fi
-
 # ---------------------------------------
 # Brewfile linking
 # ---------------------------------------
 
 # work profile installs the auto-generated CLI subset; personal (or unset) the full manifest
-BREW_MODULE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ "${DOTFILES_PROFILE:-personal}" == "work" ]]; then
-  bash "$BREW_MODULE_DIR/generate_core.sh"
-  BREWFILE_SRC="$BREW_MODULE_DIR/brewfile.core"
+  bash "$DOTFILES_DIR/generate_core.sh"
+  BREWFILE_SRC="$DOTFILES_DIR/brewfile.core"
 else
-  BREWFILE_SRC="$BREW_MODULE_DIR/brewfile"
+  BREWFILE_SRC="$DOTFILES_DIR/brewfile"
 fi
 BREWFILE_DEST="$HOME/Brewfile"
 

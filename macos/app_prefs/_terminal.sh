@@ -11,9 +11,6 @@ defaults write com.apple.Terminal SecureKeyboardEntry -bool true
 # Disable the annoying line marks in terminal
 defaults write com.apple.Terminal ShowLineMarks -int 0
 
-# Hide scroll bar in terminal and only show when scrolling
-defaults write com.apple.Terminal AppleShowScrollBars -string WhenScrolling
-
 # Enable focus follows mouse for Terminal
 # defaults write com.apple.Terminal FocusFollowsMouse -string YES
 

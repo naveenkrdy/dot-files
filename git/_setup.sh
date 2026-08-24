@@ -20,16 +20,9 @@ GITIGNORE_SRC="$DOTFILES_DIR/gitignore"
 safe_link "$GITCONFIG_SRC" "$HOME/.gitconfig"
 safe_link "$GITIGNORE_SRC" "$HOME/.gitignore"
 
-# ---------------------------------------
-# Defaults
-# ---------------------------------------
-
-echo "⚙️ Applying git defaults..."
-
-git config --global init.defaultBranch main
-git config --global pull.rebase false
-git config --global color.ui auto
-git config --global push.default simple
+# Defaults (init.defaultBranch, pull.rebase, etc.) live directly in gitconfig,
+# not applied via `git config --global` here - since ~/.gitconfig symlinks
+# into the tracked file, --global writes would edit the repo in place.
 
 # ---------------------------------------
 # Machine-local identity (~/.gitconfig.local)

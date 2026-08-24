@@ -124,8 +124,6 @@ brew "lsd"
 brew "lynx"
 # System information fetcher, with an emphasis on performance and minimalism
 brew "macchina"
-# Mac App Store command-line interface
-brew "mas"
 # Deep clean and optimize your Mac
 brew "mole"
 # Free (GNU) replacement for the Pico text editor
@@ -166,16 +164,10 @@ brew "shfmt"
 brew "smartmontools"
 # Compression/decompression library aiming for high speed
 brew "snappy"
-# Cross-shell prompt for astronauts
-brew "starship"
-# Organize software neatly under a single directory tree (e.g. /usr/local)
-brew "stow"
 # Version control system designed to be a better CVS
 brew "subversion"
 # General purpose fuzzy finder TUI
 brew "television"
-# Terminal multiplexer
-brew "tmux"
 # CLI tool that moves files or folder to the trash
 brew "trash"
 # Display directories as trees (with optional color/HTML output)

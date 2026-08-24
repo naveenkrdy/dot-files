@@ -13,7 +13,6 @@ bash setup.sh brew
 bash setup.sh git
 bash setup.sh vim
 bash setup.sh zsh
-bash setup.sh tmux
 bash setup.sh herdr
 bash setup.sh claude
 bash setup.sh macos
@@ -31,8 +30,8 @@ Setup supports two profiles, resolved in this order: `$DOTFILES_PROFILE` env var
 
 | Profile | Modules | Brewfile |
 |---------|---------|----------|
-| `personal` | brew git vim zsh tmux herdr claude macos | `brew/brewfile` (full: apps, casks, mas, vscode) |
-| `work` | brew git vim zsh tmux herdr terminal | `brew/brewfile.core` (CLI tools + nerd fonts, plus an explicit app allowlist) |
+| `personal` | brew git vim zsh herdr claude macos | `brew/brewfile` (full: apps, casks, mas, vscode) |
+| `work` | brew git vim zsh herdr terminal | `brew/brewfile.core` (CLI tools + nerd fonts, plus an explicit app allowlist) |
 
 `brew/brewfile` is dump-managed: the `bdp` alias regenerates it from the installed set.
 `brew/brewfile.core` is **auto-generated** by `brew/generate_core.sh` - never edit it by hand.
@@ -56,9 +55,8 @@ This is a macOS dotfiles repo. All configs are **symlinked** into `~` rather tha
 | `git/` | Installs git, sets global defaults, writes machine-local identity | `~/.gitconfig`, `~/.gitignore` |
 | `vim/` | Installs vim, links plugin dir and rc | `~/.vim`, `~/.vimrc` |
 | `zsh/` | Installs zsh, sets as default shell; also installs zsh-patina and links its config + custom Tokyo Night theme | `~/.zsh` → `zsh/zsh/`, `~/.zshrc` → `zsh/zshrc`, `~/.zshenv`, `~/.config/zsh-patina/config.toml`, `~/.config/zsh-patina/tokyo-night-custom.toml` |
-| `tmux/` | Installs tmux, clones tpm, links config, installs plugins headlessly | `~/.config/tmux/tmux.conf` |
 | `herdr/` | Installs herdr, links config and keybinding scripts, reloads a running server | `~/.config/herdr/config.toml`, `~/.config/herdr/move-pane-to-split.sh` |
-| `claude/` | Personal-profile only. No install (the app is `brew "claude-code"`); links Claude Code CLI config — global instructions, RTK, settings, hooks, themes, and the 16 non-external skills | `~/.claude/CLAUDE.md`, `RTK.md`, `settings.json`, `settings.local.json`, `statusline-command.sh`, `commands/`, `hooks/`, `themes/`, `skills/<name>` (per-directory, not the whole `skills/` folder — see below) |
+| `claude/` | Personal-profile only. No install (the app is `cask "claude-code"`); links Claude Code CLI config — global instructions, RTK, settings, hooks, themes, and the 15 non-external skills | `~/.claude/CLAUDE.md`, `RTK.md`, `settings.json`, `settings.local.json`, `statusline-command.sh`, `commands/`, `hooks/`, `themes/`, `skills/<name>` (per-directory, not the whole `skills/` folder — see below) |
 | `macos/` | Applies `defaults write` preferences for system and apps (personal profile only) | — |
 | `terminal/` | Work-profile subset of `macos/`: runs only `macos/app_prefs/_terminal.sh` (Terminal.app defaults + `.terminal` profile import), without the rest of the macOS system/app prefs | — |
 
@@ -73,11 +71,11 @@ Note: reading it back requires `git config --includes --global user.email` — p
 **macOS preferences:** `macos/_setup.sh` sources each script in `system_prefs/` and `app_prefs/` which use `defaults write` to configure Dock, Finder, Safari, Terminal, energy saver, keyboard, etc. Run `kill_procs` before and after to apply changes.
 `macos/app_prefs/_terminal.sh` additionally imports every `.terminal` file in `macos/files/terminalcolors/` into Terminal.app's profile list; it's idempotent (skips any profile name that already `exists`, since Terminal.app otherwise appends a numbered duplicate on re-import) and never changes the current default profile. `terminal/_setup.sh` (the work-profile module) sources this same script directly so both profiles share one implementation.
 
-**Claude Code config (`claude/`):** only the portable subset of `~/.claude/` is tracked — never `~/.claude.json` (OAuth/session tokens, lives in `$HOME`, outside `~/.claude/`), any `*.key` file, security logs, or machine-local runtime state (`projects/`, `cache/`, `session-env/`, `shell-snapshots/`, `history.jsonl`, `daemon.*`, `plans/`, etc.). `settings.json` uses `$HOME` rather than absolute paths in its hook and `statusLine` commands, so it is portable across machines and usernames: Claude Code runs hooks in shell form (no `args` key) through `sh -c`, and runs `statusLine` commands through a shell, so both expand `$HOME`. Note the path must be double-quoted, not single-quoted — single quotes suppress expansion. `skills/` is symlinked **per-directory**, not as a whole folder: 12 of its 28 live entries (`remotion-*`, `find-skills`) are symlinks into `~/.agents/skills/` (unmanaged by this repo), and a whole-folder `safe_link` would back up and replace the entire live folder, breaking those.
+**Claude Code config (`claude/`):** only the portable subset of `~/.claude/` is tracked — never `~/.claude.json` (OAuth/session tokens, lives in `$HOME`, outside `~/.claude/`), any `*.key` file, security logs, or machine-local runtime state (`projects/`, `cache/`, `session-env/`, `shell-snapshots/`, `history.jsonl`, `daemon.*`, `plans/`, etc.). `settings.json` uses `$HOME` rather than absolute paths in its hook and `statusLine` commands, so it is portable across machines and usernames: Claude Code runs hooks in shell form (no `args` key) through `sh -c`, and runs `statusLine` commands through a shell, so both expand `$HOME`. Note the path must be double-quoted, not single-quoted — single quotes suppress expansion. `skills/` is symlinked **per-directory**, not as a whole folder: `~/.claude/skills/` holds 34 live entries, 28 of them symlinks - 15 into this repo, 13 (`remotion-*`, `find-skills`) into `~/.agents/skills/` (unmanaged by this repo) - and a whole-folder `safe_link` would back up and replace the entire live folder, breaking those.
 
 ## Key patterns
 
 - `safe_link src dest` — idempotent symlink; backs up existing files as `<file>.backup.<timestamp>`.
 - `install_brew_pkg pkg` — no-op if already installed; bootstraps Homebrew first.
-- `set -euo pipefail` is used in all module scripts.
+- `set -euo pipefail` is used in all module scripts except `macos/_setup.sh`, which tolerates individual `defaults write`/`osascript` failures across its many system-prefs sub-scripts.
 - All module `_setup.sh` scripts resolve `DOTFILES_DIR` via `${BASH_SOURCE[0]}` so they work when called from any directory.

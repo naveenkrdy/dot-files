@@ -35,5 +35,6 @@ ollama
 libimobiledevice
 libusbmuxd
 
-# Personal Mac automation
-sleepwatcher
+# Mac App Store CLI - no purpose without mas "..." lines, which the
+# generator already strips from brewfile.core
+mas

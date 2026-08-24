@@ -124,9 +124,9 @@ MODULES=()
 
 if [[ $# -eq 0 ]]; then
   if [[ "$DOTFILES_PROFILE" == "work" ]]; then
-    MODULES=(brew git vim zsh tmux herdr terminal)
+    MODULES=(brew git vim zsh herdr terminal)
   else
-    MODULES=(brew git vim zsh tmux herdr claude macos)
+    MODULES=(brew git vim zsh herdr claude macos)
   fi
 else
   MODULES=("$@")

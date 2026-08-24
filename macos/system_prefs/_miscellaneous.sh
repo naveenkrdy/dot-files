@@ -1,5 +1,5 @@
 #Install fonts
-cp -vRf ${PWD}/files/fonts/*.ttf ${HOME}/Library/Fonts/
+cp -vRf ${PWD}/files/fonts/*.ttf ${PWD}/files/fonts/*.otf ${HOME}/Library/Fonts/
 
 # Enable HiDPI display modes (requires restart)
 # sudo defaults write /Library/Preferences/com.apple.windowserver DisplayResolutionEnabled -bool true

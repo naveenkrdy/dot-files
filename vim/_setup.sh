@@ -15,7 +15,7 @@ install_brew_pkg vim
 # ---------------------------------------
 # Symlinks
 # ---------------------------------------
-safe_link "${SCRIPT_DIR}/vim" "${HOME}/.vim"
+safe_link "${SCRIPT_DIR}" "${HOME}/.vim"
 safe_link "${SCRIPT_DIR}/vimrc" "${HOME}/.vimrc"
 
 echo "✅ Vim setup complete"

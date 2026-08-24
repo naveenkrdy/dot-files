@@ -42,6 +42,7 @@
 # Git
 
 - When writing commit messages, never add your agent name as co-author.
+- Before `git checkout -- <path>`, `git restore <path>`, `git reset <path>`, or `git clean` on any path - including to revert your own recent edits - run `git diff --stat <path>` (or `git status <path>`) on that exact path first. These commands discard ALL uncommitted changes to the path, not just the edits you intend to undo; a file can carry substantial unrelated uncommitted work you haven't seen this session. This rule applies even when the file looks like it should only contain your own recent changes.
 
 # Implementation
 

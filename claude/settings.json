@@ -1,5 +1,16 @@
 {
   "hooks" : {
+    "PermissionRequest" : [
+      {
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : false
+          }
+        ]
+      }
+    ],
     "PostToolUse" : [
       {
         "matcher" : "^(Read|Edit|Write)$",
@@ -7,6 +18,26 @@
           {
             "type" : "command",
             "command" : "command -v looq >/dev/null 2>&1 && looq --track-session || true"
+          }
+        ]
+      },
+      {
+        "matcher" : "AskUserQuestion",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
+          }
+        ]
+      },
+      {
+        "matcher" : "ExitPlanMode",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
           }
         ]
       }
@@ -20,6 +51,37 @@
             "command" : "rtk hook claude"
           }
         ]
+      },
+      {
+        "matcher" : "AskUserQuestion",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
+          }
+        ]
+      },
+      {
+        "matcher" : "ExitPlanMode",
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
+          }
+        ]
+      }
+    ],
+    "SessionEnd" : [
+      {
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
+          }
+        ]
       }
     ],
     "SessionStart" : [
@@ -30,6 +92,37 @@
             "type" : "command",
             "command" : "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
             "timeout" : 10
+          }
+        ]
+      },
+      {
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
+          }
+        ]
+      }
+    ],
+    "Stop" : [
+      {
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit" : [
+      {
+        "hooks" : [
+          {
+            "type" : "command",
+            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async" : true
           }
         ]
       }

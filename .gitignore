@@ -1,7 +1,5 @@
 .DS_Store
 *.zwc
-antigen
-antigen.zsh
 plugged
 autoload
 antidote
