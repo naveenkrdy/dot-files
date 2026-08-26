@@ -1178,6 +1178,7 @@ alias ccc='claude --dangerously-skip-permissions -c'
 alias ccn='claude --dangerously-skip-permissions -n'
 alias ccp='claude --dangerously-skip-permissions -p'
 alias ccd='claude --dangerously-skip-permissions'
+alias ccs='$HOME/.claude/bin/claude-sessions'   # all sessions, every directory; resumes in place
 
 # ---------------------------------------
 # Profiling output

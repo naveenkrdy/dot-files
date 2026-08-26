@@ -1,0 +1,529 @@
+#!/usr/bin/env python3
+"""List every Claude Code session across all project directories, and resume one.
+
+Sessions are stored per working directory under ~/.claude/projects/<encoded-cwd>/,
+so the built-in `claude -r` picker only sees the current directory's sessions.
+This walks all of them.
+
+The encoded directory name is NOT reversible - a real path containing a dash
+(dot-files, vorssaint-utils) decodes ambiguously - so the true cwd is read from
+the `cwd` field inside the transcript instead.
+
+Usage:
+    claude-sessions                 pick from all sessions (fzf if available)
+    claude-sessions <term>          filter by title, path, or prompt text first
+    claude-sessions --list          print the table, don't resume
+    claude-sessions --here          only sessions whose cwd is the current directory
+    claude-sessions --fork          resume into a new session id, leaving the original intact
+    claude-sessions --delete        move sessions to the trash; previews, then asks
+    claude-sessions --restore       put a trashed session back where it came from
+    claude-sessions --trash         list what is in the trash
+    claude-sessions --empty [days]  permanently remove trashed items (older than N days)
+    claude-sessions --orphans       remove leftover data whose transcript is already gone
+
+Deleting moves all four of a session's locations into ~/.claude/.trash/<stamp>-<id>/
+alongside a manifest recording where each came from, so --restore can put them back
+exactly. Nothing is destroyed until --empty.
+"""
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+CLAUDE = os.path.join(HOME, ".claude")
+PROJECTS = os.path.join(CLAUDE, "projects")
+TAIL_BYTES = 256 * 1024  # transcripts reach tens of MB; the recent state lives at the end
+
+
+def du(path):
+    if os.path.isfile(path):
+        return os.path.getsize(path)
+    total = 0
+    for root, _, files in os.walk(path):
+        for f in files:
+            try:
+                total += os.path.getsize(os.path.join(root, f))
+            except OSError:
+                pass
+    return total
+
+
+def human(n):
+    for unit in ("B", "K", "M", "G"):
+        if n < 1024 or unit == "G":
+            return f"{n:.0f}{unit}" if unit == "B" else f"{n:.1f}{unit}"
+        n /= 1024
+
+
+def session_paths(sid, transcript=None):
+    """Every location keyed to a session id. Deleting only the transcript orphans the rest."""
+    out = []
+    if transcript and os.path.exists(transcript):
+        out.append(transcript)
+        sibling = transcript[:-6]  # tool results live in a dir named after the session
+        if os.path.isdir(sibling):
+            out.append(sibling)
+    for sub in ("file-history", "session-env"):
+        p = os.path.join(CLAUDE, sub, sid)
+        if os.path.exists(p):
+            out.append(p)
+    return out
+
+
+def remove(path):
+    if os.path.isdir(path) and not os.path.islink(path):
+        shutil.rmtree(path)
+    else:
+        os.remove(path)
+
+
+TRASH = os.path.join(CLAUDE, ".trash")
+
+
+def trash_session(s):
+    """Move every location of a session into the trash. Returns (bytes, bin_dir)."""
+    os.makedirs(TRASH, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    bin_dir = os.path.join(TRASH, f"{stamp}-{s['id'][:8]}")
+    suffix = 1
+    while os.path.exists(bin_dir):  # two deletions inside the same second
+        bin_dir = os.path.join(TRASH, f"{stamp}-{s['id'][:8]}-{suffix}")
+        suffix += 1
+    os.makedirs(bin_dir)
+
+    manifest = {
+        "sessionId": s["id"], "title": s["title"], "cwd": s["cwd"],
+        "prompt": s["prompt"], "deletedAt": time.time(), "items": [],
+    }
+    moved = 0
+    for src in session_paths(s["id"], s["path"]):
+        stored = os.path.basename(src)
+        # transcript and its tool-results dir share a basename apart from the extension,
+        # so collisions inside one bin are not possible - but guard anyway
+        dest = os.path.join(bin_dir, stored)
+        n = 1
+        while os.path.exists(dest):
+            dest = os.path.join(bin_dir, f"{stored}.{n}")
+            n += 1
+        moved += du(src)
+        shutil.move(src, dest)
+        manifest["items"].append({"original": src, "stored": os.path.basename(dest)})
+
+    with open(os.path.join(bin_dir, "manifest.json"), "w") as fh:
+        json.dump(manifest, fh, indent=2)
+    return moved, bin_dir
+
+
+def read_trash():
+    """Every bin in the trash, newest first."""
+    out = []
+    if not os.path.isdir(TRASH):
+        return out
+    for entry in sorted(os.listdir(TRASH), reverse=True):
+        bin_dir = os.path.join(TRASH, entry)
+        mpath = os.path.join(bin_dir, "manifest.json")
+        if not os.path.isfile(mpath):
+            continue
+        try:
+            with open(mpath) as fh:
+                m = json.load(fh)
+        except Exception:
+            continue
+        m["bin"] = bin_dir
+        m["size"] = du(bin_dir)
+        out.append(m)
+    return out
+
+
+def trash_row(m):
+    when = time.strftime("%Y-%m-%d %H:%M", time.localtime(m.get("deletedAt", 0)))
+    title = (m.get("title") or m["sessionId"][:8])[:18]
+    cwd = pretty_cwd(m.get("cwd", ""))[:30]
+    return f"{when}  {title:<18}  {cwd:<30}  {human(m['size']):>6}  {m.get('prompt','')[:56]}"
+
+
+def read_tail(path, nbytes=TAIL_BYTES):
+    size = os.path.getsize(path)
+    with open(path, "rb") as fh:
+        if size > nbytes:
+            fh.seek(size - nbytes)
+            fh.readline()  # discard the partial line the seek landed in
+        return fh.read().decode("utf-8", "replace").splitlines()
+
+
+def read_head(path, nlines=40):
+    out = []
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        for _ in range(nlines):
+            line = fh.readline()
+            if not line:
+                break
+            out.append(line)
+    return out
+
+
+def scan(path):
+    """Return session metadata, or None if the file yields nothing usable."""
+    sid = os.path.basename(path)[:-6]
+    info = {
+        "id": sid,
+        "path": path,
+        "mtime": os.path.getmtime(path),
+        "size": os.path.getsize(path),
+        "title": "",
+        "prompt": "",
+        "cwd": "",
+        "branch": "",
+    }
+
+    # Title and last prompt are the session's most recent state - read the tail.
+    for line in read_tail(path):
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        t = d.get("type")
+        if t == "custom-title" and d.get("customTitle"):
+            info["title"] = str(d["customTitle"])
+        elif t == "last-prompt" and d.get("lastPrompt"):
+            info["prompt"] = " ".join(str(d["lastPrompt"]).split())
+
+    # cwd must come from the START of the file. It appears on many line types and
+    # drifts as Bash calls run elsewhere, so the last one is wherever the session
+    # happened to end up - not where it belongs. The first is the launch directory.
+    for line in read_head(path, 200):
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if not info["cwd"] and isinstance(d.get("cwd"), str):
+            info["cwd"] = d["cwd"]
+        if not info["branch"] and isinstance(d.get("gitBranch"), str):
+            info["branch"] = d["gitBranch"]
+        if info["cwd"] and info["branch"]:
+            break
+
+    return info if (info["prompt"] or info["title"]) else None
+
+
+def collect():
+    sessions = []
+    if not os.path.isdir(PROJECTS):
+        return sessions
+    for project in os.listdir(PROJECTS):
+        pdir = os.path.join(PROJECTS, project)
+        if not os.path.isdir(pdir):
+            continue
+        for name in os.listdir(pdir):
+            if not name.endswith(".jsonl"):
+                continue
+            try:
+                s = scan(os.path.join(pdir, name))
+            except OSError:
+                continue
+            if s:
+                sessions.append(s)
+    sessions.sort(key=lambda s: s["mtime"], reverse=True)
+    return sessions
+
+
+def pretty_cwd(p):
+    if p == HOME:
+        return "~"
+    return "~" + p[len(HOME):] if p.startswith(HOME + "/") else (p or "?")
+
+
+def choose(rows, sessions, multi=False, prompt="session> ", header=""):
+    """Return a list of selected sessions. fzf when interactive, numbered otherwise."""
+    if sys.stdin.isatty() and _have("fzf"):
+        cmd = ["fzf", "--no-sort", "--height=70%", "--reverse",
+               f"--prompt={prompt}", f"--header={header}"]
+        if multi:
+            cmd += ["--multi", "--bind=ctrl-a:select-all"]
+        proc = subprocess.run(cmd, input="\n".join(rows), capture_output=True, text=True)
+        if proc.returncode != 0 or not proc.stdout.strip():
+            return []
+        return [sessions[rows.index(l)] for l in proc.stdout.strip().split("\n") if l in rows]
+
+    shown = rows[:40]
+    for i, row in enumerate(shown, 1):
+        print(f"{i:>3}  {row}")
+    hint = "comma-separated, e.g. 1,3,7" if multi else f"1-{len(shown)}"
+    try:
+        raw = input(f"\n{prompt.strip()} [{hint}, enter to cancel] ").strip()
+    except (EOFError, KeyboardInterrupt):
+        return []
+    if not raw:
+        return []
+    picks = []
+    for part in raw.split(",") if multi else [raw]:
+        part = part.strip()
+        if part.isdigit() and 1 <= int(part) <= len(shown):
+            picks.append(sessions[int(part) - 1])
+        else:
+            print(f"ignoring invalid choice: {part}", file=sys.stderr)
+    return picks
+
+
+def do_delete(sessions, rows):
+    current = os.environ.get("CLAUDE_CODE_SESSION_ID", "")
+    picked = choose(rows, sessions, multi=True, prompt="delete> ",
+                    header="tab marks, ctrl-a all, enter confirms selection")
+    if not picked:
+        print("Nothing selected.", file=sys.stderr)
+        return 0
+
+    kept = [s for s in picked if s["id"] != current]
+    if len(kept) != len(picked):
+        print("Skipping the session you are currently in.", file=sys.stderr)
+    if not kept:
+        return 0
+
+    # Dry run first: show every path that would go, and the real total.
+    print("\nWould remove:\n", file=sys.stderr)
+    total = 0
+    for s in kept:
+        paths = session_paths(s["id"], s["path"])
+        sub = sum(du(p) for p in paths)
+        total += sub
+        label = s["title"] or s["id"][:8]
+        print(f"  {label}  ({pretty_cwd(s['cwd'])})  {human(sub)}", file=sys.stderr)
+        for p in paths:
+            print(f"      {p.replace(HOME, '~')}", file=sys.stderr)
+
+    print(f"\n{len(kept)} session(s), {human(total)} -> trash. "
+          f"Reversible with --restore.", file=sys.stderr)
+    try:
+        confirm = input(f'Type "{len(kept)}" to confirm: ').strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\nAborted.", file=sys.stderr)
+        return 130
+    if confirm != str(len(kept)):
+        print("Aborted.", file=sys.stderr)
+        return 1
+
+    moved = 0
+    for s in kept:
+        try:
+            n, _ = trash_session(s)
+            moved += n
+        except OSError as e:
+            print(f"  failed: {s['id'][:8]} ({e})", file=sys.stderr)
+    print(f"Trashed {len(kept)} session(s), {human(moved)}. "
+          f"`--restore` to undo, `--empty` to make it permanent.", file=sys.stderr)
+    return 0
+
+
+def do_restore():
+    bins = read_trash()
+    if not bins:
+        print("Trash is empty.", file=sys.stderr)
+        return 0
+    rows = [trash_row(m) for m in bins]
+    picked = choose(rows, bins, multi=True, prompt="restore> ",
+                    header="tab marks, enter restores to original locations")
+    if not picked:
+        print("Nothing selected.", file=sys.stderr)
+        return 0
+
+    restored = 0
+    for m in picked:
+        blocked = [i for i in m["items"] if os.path.exists(i["original"])]
+        if blocked:
+            print(f"  skipping {m['sessionId'][:8]}: already exists at "
+                  f"{blocked[0]['original'].replace(HOME, '~')}", file=sys.stderr)
+            continue
+        ok = True
+        for item in m["items"]:
+            src = os.path.join(m["bin"], item["stored"])
+            if not os.path.exists(src):
+                print(f"  missing from trash: {item['stored']}", file=sys.stderr)
+                ok = False
+                continue
+            os.makedirs(os.path.dirname(item["original"]), exist_ok=True)
+            shutil.move(src, item["original"])
+        if ok:
+            remove(m["bin"])  # only the manifest is left
+            restored += 1
+            print(f"  restored {m.get('title') or m['sessionId'][:8]} -> "
+                  f"{pretty_cwd(m.get('cwd',''))}", file=sys.stderr)
+    print(f"Restored {restored} session(s).", file=sys.stderr)
+    return 0
+
+
+def do_list_trash():
+    bins = read_trash()
+    if not bins:
+        print("Trash is empty.", file=sys.stderr)
+        return 0
+    print(f"{'DELETED':<16}  {'TITLE':<18}  {'DIRECTORY':<30}  {'SIZE':>6}  LAST PROMPT")
+    for m in bins:
+        print(trash_row(m))
+    print(f"\n{len(bins)} session(s), {human(sum(m['size'] for m in bins))} "
+          f"in {TRASH.replace(HOME, '~')}", file=sys.stderr)
+    return 0
+
+
+def do_empty(days=None):
+    bins = read_trash()
+    if days is not None:
+        cutoff = time.time() - days * 86400
+        bins = [m for m in bins if m.get("deletedAt", 0) < cutoff]
+    if not bins:
+        print("Nothing to empty." if days is None
+              else f"Nothing in the trash older than {days} day(s).", file=sys.stderr)
+        return 0
+    total = sum(m["size"] for m in bins)
+    print(f"Permanently removing {len(bins)} session(s), {human(total)}:", file=sys.stderr)
+    for m in bins[:10]:
+        print(f"    {trash_row(m)}", file=sys.stderr)
+    if len(bins) > 10:
+        print(f"    ... and {len(bins) - 10} more", file=sys.stderr)
+    print("\nThis cannot be undone.", file=sys.stderr)
+    try:
+        if input(f'Type "{len(bins)}" to confirm: ').strip() != str(len(bins)):
+            print("Aborted.", file=sys.stderr)
+            return 1
+    except (EOFError, KeyboardInterrupt):
+        print("\nAborted.", file=sys.stderr)
+        return 130
+    freed = 0
+    for m in bins:
+        try:
+            freed += m["size"]
+            remove(m["bin"])
+        except OSError as e:
+            print(f"  failed: {m['bin']} ({e})", file=sys.stderr)
+    print(f"Freed {human(freed)}.", file=sys.stderr)
+    return 0
+
+
+def do_orphans():
+    live = set()
+    for project in os.listdir(PROJECTS):
+        pdir = os.path.join(PROJECTS, project)
+        if os.path.isdir(pdir):
+            live |= {n[:-6] for n in os.listdir(pdir) if n.endswith(".jsonl")}
+
+    stale = []
+    for sub in ("file-history", "session-env"):
+        base = os.path.join(CLAUDE, sub)
+        if not os.path.isdir(base):
+            continue
+        for entry in os.listdir(base):
+            if len(entry) == 36 and entry not in live:
+                stale.append(os.path.join(base, entry))
+
+    if not stale:
+        print("No orphaned session data.", file=sys.stderr)
+        return 0
+
+    total = sum(du(p) for p in stale)
+    print(f"{len(stale)} orphaned director(ies), {human(total)}, "
+          f"with no matching transcript:", file=sys.stderr)
+    for p in stale[:10]:
+        print(f"    {p.replace(HOME, '~')}", file=sys.stderr)
+    if len(stale) > 10:
+        print(f"    ... and {len(stale) - 10} more", file=sys.stderr)
+    try:
+        if input("\nRemove them? [y/N] ").strip().lower() != "y":
+            print("Aborted.", file=sys.stderr)
+            return 1
+    except (EOFError, KeyboardInterrupt):
+        return 130
+    freed = 0
+    for p in stale:
+        try:
+            freed += du(p)
+            remove(p)
+        except OSError as e:
+            print(f"  failed: {p} ({e})", file=sys.stderr)
+    print(f"Freed {human(freed)}.", file=sys.stderr)
+    return 0
+
+
+def format_row(s):
+    when = time.strftime("%Y-%m-%d %H:%M", time.localtime(s["mtime"]))
+    title = (s["title"] or "-")[:18]
+    cwd = pretty_cwd(s["cwd"])[:34]
+    mb = s["size"] / 1_048_576
+    size = f"{mb:.0f}M" if mb >= 1 else f"{s['size'] // 1024}K"
+    return f"{when}  {title:<18}  {cwd:<34}  {size:>4}  {s['prompt'][:70]}"
+
+
+def main():
+    args = [a for a in sys.argv[1:]]
+    list_only = "--list" in args
+    here_only = "--here" in args
+    fork = "--fork" in args
+    delete = "--delete" in args
+    terms = [a for a in args if not a.startswith("--")]
+
+    if "--orphans" in args:
+        return do_orphans()
+    if "--restore" in args:
+        return do_restore()
+    if "--trash" in args:
+        return do_list_trash()
+    if "--empty" in args:
+        rest = args[args.index("--empty") + 1:]
+        days = int(rest[0]) if rest and rest[0].isdigit() else None
+        return do_empty(days)
+
+    sessions = collect()
+    if here_only:
+        cwd = os.getcwd()
+        sessions = [s for s in sessions if s["cwd"] == cwd]
+    for term in terms:
+        t = term.lower()
+        sessions = [
+            s for s in sessions
+            if t in s["title"].lower() or t in s["cwd"].lower() or t in s["prompt"].lower()
+        ]
+
+    if not sessions:
+        print("No matching sessions.", file=sys.stderr)
+        return 1
+
+    rows = [format_row(s) for s in sessions]
+
+    if list_only:
+        print(f"{'DATE':<16}  {'TITLE':<18}  {'DIRECTORY':<34}  {'SIZE':>4}  LAST PROMPT")
+        print("\n".join(rows))
+        print(f"\n{len(sessions)} sessions across "
+              f"{len({s['cwd'] for s in sessions})} directories", file=sys.stderr)
+        return 0
+
+    if delete:
+        return do_delete(sessions, rows)
+
+    picked = choose(rows, sessions, prompt="resume> ",
+                    header="enter resumes in the session's own directory")
+    if not picked:
+        return 0
+    chosen = picked[0]
+
+    target = chosen["cwd"] if os.path.isdir(chosen["cwd"]) else os.path.expanduser("~")
+    if target != chosen["cwd"]:
+        print(f"note: {chosen['cwd']} no longer exists, resuming from {target}",
+              file=sys.stderr)
+
+    cmd = ["claude", "--resume", chosen["id"]] + (["--fork-session"] if fork else [])
+    print(f"cd {pretty_cwd(target)} && {' '.join(cmd)}", file=sys.stderr)
+    os.chdir(target)
+    os.execvp("claude", cmd)
+
+
+def _have(binary):
+    return subprocess.run(["command", "-v", binary], capture_output=True,
+                          shell=False, executable=None).returncode == 0 or \
+        any(os.access(os.path.join(p, binary), os.X_OK)
+            for p in os.environ.get("PATH", "").split(os.pathsep) if p)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
