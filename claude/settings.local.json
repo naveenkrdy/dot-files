@@ -7,6 +7,18 @@
     ]
   },
   "skillOverrides": {
-    "visual-plan": "user-invocable-only"
+    "visual-plan": "user-invocable-only",
+    "remotion-best-practices": "user-invocable-only",
+    "remotion-captions": "user-invocable-only",
+    "remotion-create": "user-invocable-only",
+    "remotion-docs": "user-invocable-only",
+    "remotion-interactivity": "user-invocable-only",
+    "remotion-maps": "user-invocable-only",
+    "remotion-markup": "user-invocable-only",
+    "remotion-multimedia": "user-invocable-only",
+    "remotion-render": "user-invocable-only",
+    "remotion-saas": "user-invocable-only",
+    "remotion-studio": "user-invocable-only",
+    "remotion-upgrade": "user-invocable-only"
   }
 }
