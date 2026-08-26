@@ -2,7 +2,7 @@ onboarding = false
 
 # ── Theme: Vesper (warm minimal dark) ────────────────────────────────
 [theme]
-name = "catppuccin"
+name = "tokyo-night"
 auto_switch = false
 
 [theme.custom]
@@ -16,7 +16,7 @@ sidebar_bg = "reset"
 # ── UI ───────────────────────────────────────────────────────────────
 [ui]
 show_agent_labels_on_pane_borders = true
-agent_panel_sort = "priority"
+agent_panel_sort = "spaces"
 pane_borders = true
 pane_gaps = true                  # visual separation between splits
 hide_tab_bar_when_single_tab = true   # cleaner single-tab view
@@ -26,13 +26,28 @@ hide_tab_bar_when_single_tab = true   # cleaner single-tab view
 status_indicators = "symbols"
 [ui.sidebar.spaces]
 row_gap = 1
+# state_icon was a bare token on herdr's factory default, inheriting the dim
+# treatment. Only dim is removed here (no bold, no fg), so herdr's own
+# clean/dirty branch color-coding on the icon stays intact.
+rows = [
+  [{ token = "state_icon", dim = false }, { token = "workspace", bold = true }],
+  ["branch", "git_status"],
+]
 
 [ui.sidebar.agents]
 row_gap = 1
-# line 1: session name; line 2: working/idle status, folder name dimmed on the right
+# line 1: status icon + session name (both bold); line 2: status text left, model right.
+# No fg anywhere here - herdr colors built-in tokens (state_icon, state_text,
+# terminal_title_stripped) per the ACTIVE theme's own role for that token when fg
+# is omitted, so switching themes recolors these automatically. bold/dim are
+# weight modifiers layered on top of that color, not a color choice themselves.
+# $model is a $name metadata token (published by claude/hooks/herdr-model-token.sh
+# via pane.report_metadata), not a built-in - no theme defines a role for it, so
+# it has no theme color to follow either way; leaving fg unset here just avoids
+# a wrong hardcoded hex rather than guaranteeing a "correct" themed one.
 rows = [
-  ["state_icon", { token = "terminal_title_stripped", dim = false }],
-  ["state_text", { token = "workspace", dim = true }],
+  [{ token = "state_icon", bold = true, dim = false }, { token = "terminal_title_stripped", bold = true, dim = false }],
+  [{ token = "state_text", bold = true, dim = false }, { token = "$model", bold = false, dim = false }],
 ]
 
 [ui.toast]
