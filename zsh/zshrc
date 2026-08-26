@@ -593,7 +593,11 @@ typeset -g _PG_ARROW='❯'
 typeset -g _prompt_cmd_start=""
 typeset -g _prompt_elapsed=""
 typeset -g _prompt_last_exit=0
-typeset -g _prompt_first_run=1
+# Set by _prompt_precmd; read by _prompt_build_prompt/_prompt_build_full to decide
+# whether the active prompt gets a leading blank line. It is naturally 0 on the
+# shell's very first prompt (no command has set _prompt_cmd_start yet), so no
+# separate "first run" flag is needed.
+typeset -g _prompt_cmd_ran=0
 
 # Compact shared state — populated by _prompt_build_rprompt,
 # read by _prompt_build_prompt for branch left of ❯.
@@ -829,7 +833,12 @@ _prompt_build_prompt() {
     p+="%{${_PC_OK}%}${_PG_ARROW}%{${_PC_RST}%} "
   fi
 
-  PROMPT="$p"
+  # Gap lives inside PROMPT itself (not a separate `print`) so that collapsing
+  # to the transient form on accept - which has no leading blank - removes it
+  # from the scrollback along with the rest of the active-only decoration.
+  local gap=""
+  (( _prompt_cmd_ran )) && gap=$'\n'
+  PROMPT="${gap}${p}"
 }
 
 # ── PROMPT: full theme — info line + blank cursor line ───────────────────
@@ -951,7 +960,10 @@ _prompt_build_full() {
     line2+="%{${C_AWS}%}→%{${_PC_RST}%} "
   fi
 
-  PROMPT="${p}
+  # Gap lives inside PROMPT itself, same rationale as the compact builder above.
+  local gap=""
+  (( _prompt_cmd_ran )) && gap=$'\n'
+  PROMPT="${gap}${p}
 ${line2}"
 
   # RPROMPT: time + optional elapsed on cursor line right
@@ -965,17 +977,11 @@ ${line2}"
 _prompt_precmd() {
   _prompt_last_exit=$?
 
-  local cmd_ran=0
-  [[ -n "$_prompt_cmd_start" ]] && cmd_ran=1
-
-  if (( _prompt_first_run )); then
-    _prompt_first_run=0
-  elif (( cmd_ran )); then
-    print
-  fi
+  _prompt_cmd_ran=0
+  [[ -n "$_prompt_cmd_start" ]] && _prompt_cmd_ran=1
 
   _prompt_elapsed=""
-  if (( cmd_ran )); then
+  if (( _prompt_cmd_ran )); then
     local elapsed=$(( EPOCHREALTIME - _prompt_cmd_start ))
     if (( elapsed >= 2 )); then
       _prompt_elapsed="$(printf '%.2f' $elapsed)"
