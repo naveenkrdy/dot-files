@@ -1,161 +1,185 @@
 {
-  "hooks" : {
-    "PermissionRequest" : [
+  "permissions": {
+    "defaultMode": "plan"
+  },
+  "model": "sonnet",
+  "hooks": {
+    "PermissionRequest": [
       {
-        "hooks" : [
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : false
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": false
           }
         ]
       }
     ],
-    "PostToolUse" : [
+    "PostToolUse": [
       {
-        "matcher" : "^(Read|Edit|Write)$",
-        "hooks" : [
+        "matcher": "^(Read|Edit|Write)$",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "command -v looq >/dev/null 2>&1 && looq --track-session || true"
+            "type": "command",
+            "command": "command -v looq >/dev/null 2>&1 && looq --track-session || true",
+            "async": true
           }
         ]
       },
       {
-        "matcher" : "AskUserQuestion",
-        "hooks" : [
+        "matcher": "AskUserQuestion",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
           }
         ]
       },
       {
-        "matcher" : "ExitPlanMode",
-        "hooks" : [
+        "matcher": "ExitPlanMode",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
           }
         ]
       }
     ],
-    "PreToolUse" : [
+    "PreToolUse": [
       {
-        "matcher" : "Bash",
-        "hooks" : [
+        "matcher": "Bash",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "rtk hook claude"
+            "type": "command",
+            "command": "rtk hook claude"
           }
         ]
       },
       {
-        "matcher" : "AskUserQuestion",
-        "hooks" : [
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
+            "type": "command",
+            "command": "sh \"$HOME/.claude/hooks/herdr-model-token.sh\"",
+            "async": true
           }
         ]
       },
       {
-        "matcher" : "ExitPlanMode",
-        "hooks" : [
+        "matcher": "AskUserQuestion",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
-          }
-        ]
-      }
-    ],
-    "SessionEnd" : [
-      {
-        "hooks" : [
-          {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
-          }
-        ]
-      }
-    ],
-    "SessionStart" : [
-      {
-        "matcher" : "*",
-        "hooks" : [
-          {
-            "type" : "command",
-            "command" : "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
-            "timeout" : 10
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
           }
         ]
       },
       {
-        "hooks" : [
+        "matcher": "ExitPlanMode",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
           }
         ]
       }
     ],
-    "Stop" : [
+    "SessionEnd": [
       {
-        "hooks" : [
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
           }
         ]
       }
     ],
-    "UserPromptSubmit" : [
+    "SessionStart": [
       {
-        "hooks" : [
+        "matcher": "*",
+        "hooks": [
           {
-            "type" : "command",
-            "command" : "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
-            "async" : true
+            "type": "command",
+            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "sh \"$HOME/.claude/hooks/herdr-model-token.sh\"",
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "sh \"$HOME/.claude/hooks/herdr-model-token.sh\"",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/opt/homebrew/opt/moshi-hook/bin/moshi-hook' claude-hook",
+            "async": true
           }
         ]
       }
     ]
   },
-  "statusLine" : {
-    "type" : "command",
-    "command" : "bash \"$HOME/.claude/statusline-command.sh\""
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$HOME/.claude/statusline-command.sh\""
   },
-  "enabledPlugins" : {
-    "claude-code-setup@claude-plugins-official" : false,
-    "claude-md-management@claude-plugins-official" : true,
-    "frontend-design@claude-plugins-official" : true,
-    "playwright@claude-plugins-official" : true,
-    "remember@claude-plugins-official" : true,
-    "security-guidance@claude-plugins-official" : true,
-    "superpowers@superpowers-marketplace" : false,
-    "swift-lsp@claude-plugins-official" : false
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "playwright@claude-plugins-official": false,
+    "remember@claude-plugins-official": false,
+    "security-guidance@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": false,
+    "swift-lsp@claude-plugins-official": false
   },
-  "extraKnownMarketplaces" : {
-    "superpowers-marketplace" : {
-      "source" : {
-        "source" : "github",
-        "repo" : "obra/superpowers-marketplace"
+  "extraKnownMarketplaces": {
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
       }
     }
   },
-  "spinnerTipsEnabled" : false,
-  "effortLevel" : "high",
-  "awaySummaryEnabled" : true,
-  "tui" : "fullscreen",
-  "skipDangerousModePermissionPrompt" : true,
-  "theme" : "custom:tokyo-night",
-  "inputNeededNotifEnabled" : true,
-  "agentPushNotifEnabled" : true
+  "spinnerTipsEnabled": false,
+  "effortLevel": "high",
+  "awaySummaryEnabled": true,
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "custom:tokyo-night",
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true
 }
