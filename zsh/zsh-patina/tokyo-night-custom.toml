@@ -5,8 +5,8 @@
 # so punctuation for comments/strings is set to match its content explicitly.
 
 # comments
-"comment" = "#414868"
-"punctuation.definition.comment.begin" = "#414868"
+"comment" = "#565f89"
+"punctuation.definition.comment.begin" = "#565f89"
 
 # strings
 "string" = "#9ece6a"
